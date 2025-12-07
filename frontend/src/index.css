@@ -4,71 +4,108 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* ===== DEVIAS-STYLE DASHBOARD THEME ===== */
+/* ===== DUAL THEME SYSTEM ===== */
+
+/* Light Theme (Default) */
 :root {
   --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
 
-  /* Deep Navy Background (like the reference) */
+  /* Light Mode Colors */
+  --background: 0 0% 100%;
+  --foreground: 222 47% 11%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+
+  --primary: 259 94% 51%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 220 14% 96%;
+  --secondary-foreground: 222 47% 11%;
+
+  --muted: 220 14% 96%;
+  --muted-foreground: 215 16% 47%;
+
+  --accent: 220 14% 96%;
+  --accent-foreground: 222 47% 11%;
+
+  --success: 142 71% 45%;
+  --success-foreground: 0 0% 100%;
+
+  --warning: 38 92% 50%;
+  --warning-foreground: 0 0% 100%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 220 13% 91%;
+  --input: 220 13% 91%;
+  --ring: 259 94% 51%;
+
+  --radius: 0.75rem;
+
+  --chart-1: 259 94% 51%;
+  --chart-2: 199 89% 48%;
+  --chart-3: 142 71% 45%;
+  --chart-4: 38 92% 50%;
+  --chart-5: 326 78% 60%;
+
+  --sidebar: 220 14% 96%;
+  --sidebar-foreground: 222 47% 11%;
+  --sidebar-primary: 259 94% 51%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 220 14% 96%;
+  --sidebar-accent-foreground: 222 47% 11%;
+  --sidebar-border: 220 13% 91%;
+  --sidebar-ring: 259 94% 51%;
+}
+
+/* Dark Theme */
+.dark {
   --background: 222 47% 11%;
   --foreground: 210 40% 98%;
 
-  /* Cards: Slightly elevated navy */
   --card: 222 47% 13%;
   --card-foreground: 210 40% 98%;
 
   --popover: 222 47% 15%;
   --popover-foreground: 210 40% 98%;
 
-  /* Vibrant Indigo/Purple Primary (button color from reference) */
   --primary: 259 94% 51%;
   --primary-foreground: 0 0% 100%;
 
-  /* Teal/Cyan Secondary */
-  --secondary: 199 89% 48%;
-  --secondary-foreground: 0 0% 100%;
+  --secondary: 222 47% 18%;
+  --secondary-foreground: 210 40% 98%;
 
-  /* Muted backgrounds */
   --muted: 222 47% 18%;
   --muted-foreground: 215 20% 65%;
 
-  /* Accent (hover states) */
-  --accent: 259 94% 51%;
-  --accent-foreground: 0 0% 100%;
+  --accent: 222 47% 20%;
+  --accent-foreground: 210 40% 98%;
 
-  /* Status Colors */
   --success: 142 71% 45%;
   --success-foreground: 0 0% 100%;
+
   --warning: 38 92% 50%;
   --warning-foreground: 0 0% 100%;
+
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
 
-  /* Borders: Subtle, slightly lighter than card */
   --border: 222 47% 20%;
   --input: 222 47% 18%;
   --ring: 259 94% 51%;
 
-  --radius: 0.75rem;
-
-  font-family: var(--font-sans);
-  line-height: 1.5;
-  font-weight: 400;
-  color-scheme: dark;
-
-  /* Chart colors matching the Devias style */
   --chart-1: 259 94% 51%;
-  /* Primary purple */
   --chart-2: 199 89% 48%;
-  /* Cyan */
   --chart-3: 142 71% 45%;
-  /* Green */
   --chart-4: 38 92% 50%;
-  /* Orange */
   --chart-5: 326 78% 60%;
-  /* Pink */
 
-  /* Sidebar */
   --sidebar: 222 47% 9%;
   --sidebar-foreground: 215 20% 75%;
   --sidebar-primary: 259 94% 51%;
@@ -79,106 +116,62 @@
   --sidebar-ring: 259 94% 51%;
 }
 
-/* Base background - solid deep navy */
+/* Base Styles */
 html {
-  background-color: hsl(222 47% 11%);
-  min-height: 100vh;
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
   min-height: 100vh;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-/* ===== CARD STYLES ===== */
+/* Card Styles */
 .card {
   background-color: hsl(var(--card));
   border: 1px solid hsl(var(--border));
   border-radius: var(--radius);
 }
 
-/* Gradient banner like in the reference image */
+/* Gradient Banner */
 .gradient-banner {
-  background: linear-gradient(135deg, hsl(259 94% 45%) 0%, hsl(280 90% 35%) 100%);
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(280 90% 45%) 100%);
   border-radius: var(--radius);
 }
 
-/* ===== BUTTON STYLES ===== */
-.btn-primary {
-  background-color: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
-  border-radius: var(--radius);
-  transition: all 0.2s ease;
-}
-
-.btn-primary:hover {
-  background-color: hsl(259 94% 45%);
-  box-shadow: 0 4px 14px 0 hsla(259, 94%, 51%, 0.39);
-}
-
-/* ===== SIDEBAR ACTIVE STATE (like in reference) ===== */
-.nav-active {
-  background-color: hsla(259, 94%, 51%, 0.12);
-  color: hsl(var(--primary));
-  border-radius: var(--radius);
-}
-
-/* ===== STATUS BADGES ===== */
-.badge-success {
-  background-color: hsla(142, 71%, 45%, 0.15);
-  color: hsl(142 71% 45%);
-}
-
-.badge-warning {
-  background-color: hsla(38, 92%, 50%, 0.15);
-  color: hsl(38 92% 50%);
-}
-
-.badge-info {
-  background-color: hsla(199, 89%, 48%, 0.15);
-  color: hsl(199 89% 48%);
-}
-
-/* ===== SMOOTH TRANSITIONS ===== */
-*,
-*::before,
-*::after {
-  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
-}
-
-/* ===== SCROLLBAR ===== */
+/* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(222 47% 15%);
+  background: hsl(var(--muted));
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(222 47% 25%);
+  background: hsl(var(--muted-foreground) / 0.3);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(222 47% 35%);
+  background: hsl(var(--muted-foreground) / 0.5);
 }
 
-/* ===== FOCUS STYLES ===== */
+/* Focus Styles */
 *:focus-visible {
   outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
 }
 
-/* ===== SELECTION ===== */
+/* Selection */
 ::selection {
-  background: hsla(259, 94%, 51%, 0.3);
+  background: hsl(var(--primary) / 0.3);
   color: hsl(var(--foreground));
 }
 
