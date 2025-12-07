@@ -44,22 +44,21 @@ jobs:
           git push -u origin master
           echo "Master branch created successfully"
 
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: main
-          base: master
-          title: "Merge main into master"
-          body: |
-            This PR merges the main branch into the newly created master branch.
-            
-            After this PR is merged:
-            1. Go to repository Settings
-            2. Navigate to Branches
-            3. Set "master" as the default branch
-            
-            This will make master the primary branch for the repository.
-          labels: |
-            automated
-            branch-setup
+      - name: Create Pull Request from main to master
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Create PR using GitHub CLI
+          gh pr create \
+            --base master \
+            --head main \
+            --title "Merge main into master" \
+            --body "This PR merges the main branch into the newly created master branch.
+
+After this PR is merged:
+1. Go to repository Settings
+2. Navigate to Branches  
+3. Set 'master' as the default branch
+
+This will make master the primary branch for the repository." \
+            --label "automated,branch-setup" || echo "PR may already exist or failed to create"
