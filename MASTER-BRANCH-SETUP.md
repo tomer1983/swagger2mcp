@@ -14,7 +14,7 @@ A GitHub Actions workflow has been created to automate the master branch creatio
 ### Workflow: `.github/workflows/create-master-branch.yml`
 
 This workflow will:
-1. Create the "master" branch from "main" 
+1. Create the "master" branch from "main"
 2. Push the master branch to the remote repository
 3. Create a Pull Request to merge "main" into "master"
 
@@ -22,9 +22,30 @@ The workflow runs automatically when:
 - This PR is merged into the repository
 - Manual trigger via GitHub Actions "Run workflow" button
 
+**Note:** The workflow may require manual approval if repository settings require it. If the workflow shows "action_required" status, you may need to approve it in the GitHub Actions tab.
+
+### Alternative: Shell Script
+
+A shell script is also provided for manual execution:
+
+```bash
+# Run from repository root
+./create-master-branch.sh
+```
+
+This script requires:
+- Git command line tools
+- GitHub CLI (`gh`) for PR creation (optional, provides manual instructions if not available)
+
+The script will:
+1. Check if master branch exists
+2. Create master branch from main if it doesn't exist
+3. Push master branch to remote
+4. Create PR from main to master (if gh CLI is available)
+
 ### What Happens Automatically
-✅ Master branch creation from main  
-✅ Push master branch to remote  
+✅ Master branch creation from main
+✅ Push master branch to remote
 ✅ Create PR from main to master  
 
 ### Manual Steps Required After Workflow Runs
