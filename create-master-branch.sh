@@ -76,7 +76,12 @@ This will make master the primary branch for the repository."
 else
     echo "⚠️  GitHub CLI (gh) not found."
     echo "Please install it or create the PR manually:"
-    echo "1. Go to: https://github.com/$(git remote get-url origin | sed 's/.*github.com[:/]\(.*\)\.git/\1/')/compare/master...main"
+    
+    # Extract repository path from remote URL
+    REMOTE_URL=$(git remote get-url origin)
+    REPO_PATH=$(echo "$REMOTE_URL" | sed -E 's#.*github\.com[:/]([^/]+/[^.]+)(\.git)?#\1#')
+    
+    echo "1. Go to: https://github.com/${REPO_PATH}/compare/master...main"
     echo "2. Create a PR from main to master"
 fi
 
