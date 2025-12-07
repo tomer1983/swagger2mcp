@@ -1,0 +1,65 @@
+name: Create Master Branch
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - copilot/create-new-master-branch
+
+jobs:
+  create-master:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch all branches
+        run: |
+          git fetch origin
+          git fetch origin main:main || true
+
+      - name: Create master branch from main
+        run: |
+          # Check if master branch already exists
+          if git ls-remote --heads origin master | grep master; then
+            echo "Master branch already exists"
+            exit 0
+          fi
+          
+          # Create master branch from main
+          git checkout main
+          git checkout -b master
+          git push -u origin master
+          echo "Master branch created successfully"
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
+          base: master
+          title: "Merge main into master"
+          body: |
+            This PR merges the main branch into the newly created master branch.
+            
+            After this PR is merged:
+            1. Go to repository Settings
+            2. Navigate to Branches
+            3. Set "master" as the default branch
+            
+            This will make master the primary branch for the repository.
+          labels: |
+            automated
+            branch-setup
