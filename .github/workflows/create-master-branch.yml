@@ -12,7 +12,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -37,7 +37,7 @@ jobs:
             echo "Master branch already exists"
             exit 0
           fi
-          
+
           # Create master branch from main
           git checkout main
           git checkout -b master
@@ -55,10 +55,10 @@ jobs:
             --title "Merge main into master" \
             --body "This PR merges the main branch into the newly created master branch.
 
-After this PR is merged:
-1. Go to repository Settings
-2. Navigate to Branches  
-3. Set 'master' as the default branch
+          After this PR is merged:
+          1. Go to repository Settings
+          2. Navigate to Branches
+          3. Set 'master' as the default branch
 
-This will make master the primary branch for the repository." \
-            --label "automated,branch-setup" || echo "PR may already exist or failed to create"
+          This will make master the primary branch for the repository." \
+            --label "automated,branch-setup" || echo "PR may already exist or failed"
