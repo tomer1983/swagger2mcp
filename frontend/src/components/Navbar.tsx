@@ -8,13 +8,15 @@ import {
   Database,
   Briefcase,
   Shield,
+  Sun,
+  Moon,
   User,
   LogOut,
   LogIn,
   Menu
 } from 'lucide-react';
 import { Button } from './ui/button';
-
+import { useTheme } from './theme-provider';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,7 +30,7 @@ import { Separator } from './ui/separator';
 
 export const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
-
+  const { resolvedTheme, toggleTheme } = useTheme();
   const location = useLocation();
 
   const isActive = (path: string) => {
@@ -89,7 +91,10 @@ export const Navbar: React.FC = () => {
         </div>
 
         <div className="flex flex-1 items-center justify-end gap-2">
-
+          {/* Theme toggle */}
+          <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme">
+            {resolvedTheme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+          </Button>
 
           {/* User menu */}
           {user ? (
