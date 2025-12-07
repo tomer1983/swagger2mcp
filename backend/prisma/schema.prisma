@@ -1,0 +1,92 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  username      String?   @unique
+  passwordHash  String?   // For local auth (null for OAuth users)
+  provider      String    @default("local") // "local" or "microsoft"
+  providerId    String?   // OAuth provider user ID
+  displayName   String?
+  role          String    @default("user") // "admin" or "user" for RBAC
+  isActive      Boolean   @default(true)   // For soft delete/deactivation
+  createdAt     DateTime  @default(now())
+  lastLoginAt   DateTime?
+  sessions      Session[]
+  schemas       Schema[]
+  auditLogs     Audit[]   @relation("AuditActor")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String?  // Nullable for anonymous sessions
+  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  schemas   Schema[]
+}
+
+model Schema {
+  id        String   @id @default(uuid())
+  sessionId String
+  session   Session  @relation(fields: [sessionId], references: [id])
+  userId    String?  // Nullable - null means anonymous/example data
+  user      User?    @relation(fields: [userId], references: [id])
+  type      String   // "UPLOAD" or "CRAWL"
+  content   String   // JSON content of the schema (Text type in Postgres)
+  url       String?  // Source URL if crawled
+  createdAt DateTime @default(now())
+  version   Int      @default(1)  // Version number for this schema
+  parentId  String?  // Reference to previous version
+  versions  SchemaVersion[]
+}
+
+model SchemaVersion {
+  id        String   @id @default(uuid())
+  schemaId  String
+  schema    Schema   @relation(fields: [schemaId], references: [id], onDelete: Cascade)
+  version   Int
+  content   String   // JSON content of this version
+  changelog String?  // Description of changes in this version
+  createdAt DateTime @default(now())
+}
+
+model Webhook {
+  id        String   @id @default(uuid())
+  sessionId String
+  url       String   // Webhook URL to POST to
+  events    String[] // Array of event types: ["job.completed", "job.failed", "schema.created"]
+  secret    String?  // Optional secret for HMAC signing
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model Audit {
+  id        String   @id @default(uuid())
+  actorId   String?  // User who performed the action (nullable for system actions)
+  actor     User?    @relation("AuditActor", fields: [actorId], references: [id])
+  action    String   // Action performed (e.g., "config.update", "user.create", "schema.delete")
+  target    String?  // Target of the action (e.g., user ID, schema ID, config key)
+  result    String   // "success" or "failure"
+  metadata  String?  // JSON metadata about the action
+  timestamp DateTime @default(now())
+  
+  @@index([actorId])
+  @@index([action])
+  @@index([timestamp])
+}
+
+model Config {
+  key       String   @id
+  value     String   // JSON string for complex values
+  category  String   // "auth", "system", "observability", "generation"
+  updatedAt DateTime @updatedAt
+  
+  @@index([category])
+}

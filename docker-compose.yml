@@ -1,0 +1,72 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/swagger2mcp
+      - JWT_SECRET=dev-secret-key-change-in-production
+      - JWT_EXPIRES_IN=7d
+      - ALLOW_ANONYMOUS=true
+      - ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+      - FRONTEND_URL=http://localhost:5173
+      # Microsoft OAuth (optional - uncomment and add your credentials)
+      # - MICROSOFT_CLIENT_ID=your-client-id
+      # - MICROSOFT_CLIENT_SECRET=your-client-secret
+      # - MICROSOFT_CALLBACK_URL=http://localhost:3000/api/auth/microsoft/callback
+    depends_on:
+      - redis
+      - postgres
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+  worker:
+    build: ./backend
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/swagger2mcp
+      - JWT_SECRET=dev-secret-key-change-in-production
+      - ALLOW_ANONYMOUS=true
+    depends_on:
+      - redis
+      - postgres
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: npm run worker
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:3000/api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    # For development, we want to run the dev server
+    command: npm run dev -- --host
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=swagger2mcp
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
