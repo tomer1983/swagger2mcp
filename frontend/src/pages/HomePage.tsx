@@ -13,12 +13,12 @@ export const HomePage: React.FC = () => {
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl opacity-50" />
           <div className="absolute top-1/3 right-1/4 w-72 h-72 bg-purple-500/20 rounded-full blur-3xl opacity-40" />
         </div>
-        
+
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6 border border-primary/20">
           <Sparkles className="w-4 h-4" />
           AI-Powered API Integration
         </div>
-        
+
         <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
           Transform OpenAPI to
           <span className="block bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
@@ -36,6 +36,12 @@ export const HomePage: React.FC = () => {
               <ArrowRight className="w-4 h-4" />
             </Button>
           </Link>
+          <a href="https://github.com/tomer1983/swagger2mcp" target="_blank" rel="noopener noreferrer">
+            <Button variant="secondary" size="lg" className="gap-2">
+              <Github className="w-4 h-4" />
+              GitHub
+            </Button>
+          </a>
           <Link to="/docs">
             <Button variant="outline" size="lg">
               Documentation
