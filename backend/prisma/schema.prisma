@@ -22,6 +22,7 @@ model User {
   sessions      Session[]
   schemas       Schema[]
   auditLogs     Audit[]   @relation("AuditActor")
+  savedRepositories SavedRepository[]
 }
 
 model Session {
@@ -89,4 +90,26 @@ model Config {
   updatedAt DateTime @updatedAt
   
   @@index([category])
+}
+
+model SavedRepository {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String   // "github" or "gitlab"
+  name        String   // User-friendly name for the repo config
+  description String?  // Optional description
+  // GitHub-specific fields
+  owner       String?  // GitHub owner/org
+  repo        String?  // GitHub repo name
+  // GitLab-specific fields
+  projectPath String?  // GitLab project path (e.g., "user/project")
+  host        String?  // GitLab host (defaults to gitlab.com)
+  branch      String?  // Default branch
+  // Common fields
+  token       String   // Encrypted token
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([userId, type])
 }

@@ -33,16 +33,16 @@ const SESSION_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 const ensureSession = async (req: Request, res: Response, next: NextFunction) => {
     let sessionId = req.cookies?.[SESSION_COOKIE_NAME];
-    
+
     // Also accept sessionId from body/query for backward compatibility
     if (!sessionId) {
         sessionId = req.body?.sessionId || req.query?.sessionId;
     }
-    
+
     if (!sessionId) {
         sessionId = uuidv4();
     }
-    
+
     // Set HTTP-only cookie
     res.cookie(SESSION_COOKIE_NAME, sessionId, {
         httpOnly: true,
@@ -50,17 +50,17 @@ const ensureSession = async (req: Request, res: Response, next: NextFunction) =>
         sameSite: 'lax',
         maxAge: SESSION_MAX_AGE
     });
-    
+
     // Ensure session exists in database
     const authReq = req as AuthenticatedRequest;
     const userId = authReq.authUser?.id;
-    
+
     await prisma.session.upsert({
         where: { id: sessionId },
         update: userId ? { userId } : {},
         create: { id: sessionId, userId: userId || null },
     });
-    
+
     // Attach to request for use in handlers
     (req as any).sessionId = sessionId;
     next();
@@ -86,7 +86,7 @@ const storage = multer.diskStorage({
     },
 });
 
-const upload = multer({ 
+const upload = multer({
     storage,
     limits: {
         fileSize: 10 * 1024 * 1024, // 10MB limit
@@ -171,29 +171,29 @@ router.post('/paste', async (req: Request, res: Response) => {
         const authReq = req as AuthenticatedRequest;
         const userId = getUserId(authReq);
         const { content } = req.body;
-        
+
         if (!content || typeof content !== 'string' || content.trim().length === 0) {
             return res.status(400).json({ error: 'Content is required and must be a non-empty string' });
         }
-        
+
         // Basic size limit (same as file upload - 10MB)
         if (content.length > 10 * 1024 * 1024) {
             return res.status(400).json({ error: 'Content exceeds maximum size of 10MB' });
         }
-        
+
         const jobData: JobData = {
             type: 'PASTE',
             payload: { content: content.trim() },
             sessionId,
             userId,
         };
-        
+
         const job = await jobQueue.add('job', jobData);
         metrics.jobsQueued++;
-        
-        res.json({ 
-            message: 'Schema submitted for processing', 
-            jobId: job.id 
+
+        res.json({
+            message: 'Schema submitted for processing',
+            jobId: job.id
         });
     } catch (error: any) {
         console.error('Paste error:', error);
@@ -209,7 +209,7 @@ router.get('/schemas', async (req, res) => {
 
     // If authenticated, show user's schemas
     // If anonymous, show anonymous schemas (userId = null) OR example schemas
-    const where: any = userId 
+    const where: any = userId
         ? { userId } // Authenticated: only their schemas
         : { userId: null }; // Anonymous: only anonymous/example schemas
 
@@ -227,7 +227,7 @@ router.get('/jobs/:id', async (req, res) => {
 
     try {
         const job = await jobQueue.getJob(id);
-        
+
         if (!job) {
             return res.status(404).json({ error: 'Job not found' });
         }
@@ -258,13 +258,13 @@ router.delete('/jobs/:id', async (req, res) => {
 
     try {
         const job = await jobQueue.getJob(id);
-        
+
         if (!job) {
             return res.status(404).json({ error: 'Job not found' });
         }
 
         const state = await job.getState();
-        
+
         // Can only cancel waiting or delayed jobs
         if (state === 'waiting' || state === 'delayed') {
             await job.remove();
@@ -291,13 +291,13 @@ router.post('/jobs/:id/retry', async (req, res) => {
 
     try {
         const job = await jobQueue.getJob(id);
-        
+
         if (!job) {
             return res.status(404).json({ error: 'Job not found' });
         }
 
         const state = await job.getState();
-        
+
         if (state !== 'failed') {
             return res.status(400).json({ error: `Can only retry failed jobs, current state: ${state}` });
         }
@@ -316,7 +316,7 @@ router.get('/jobs', async (req, res) => {
 
     try {
         let jobs;
-        
+
         if (status === 'active') {
             jobs = await jobQueue.getActive();
         } else if (status === 'waiting') {
@@ -618,7 +618,7 @@ router.post('/generate', async (req, res) => {
         // Check schema size before processing (Issue #29)
         const sizeBytes = Buffer.byteLength(schema.content, 'utf8');
         if (sizeBytes > 100 * 1024 * 1024) { // 100MB limit
-            return res.status(413).json({ 
+            return res.status(413).json({
                 error: 'Schema too large for processing',
                 size: `${(sizeBytes / 1024 / 1024).toFixed(2)}MB`,
                 limit: '100MB'
@@ -660,8 +660,8 @@ router.post('/generate/batch', async (req, res) => {
 
         metrics.jobsQueued++;
 
-        res.json({ 
-            message: 'Batch generation started', 
+        res.json({
+            message: 'Batch generation started',
             jobId: job.id,
             note: 'Poll /api/jobs/:id for status. Result will be available at /api/downloads/:filename'
         });
@@ -677,7 +677,7 @@ router.get('/downloads/:filename', (req, res) => {
     // Basic sanitization to prevent directory traversal
     const safeFilename = path.basename(filename);
     const filePath = path.join(__dirname, '../downloads', safeFilename);
-    
+
     if (fs.existsSync(filePath)) {
         res.download(filePath);
     } else {
@@ -747,12 +747,331 @@ router.post('/export/gitlab', async (req, res) => {
     }
 });
 
+// ===== CONNECTION VALIDATION ENDPOINTS =====
+
+// POST /api/validate/github - Validate GitHub connection
+router.post('/validate/github', async (req, res) => {
+    const { token, owner, repo } = req.body;
+
+    if (!token) {
+        return res.status(400).json({ error: 'GitHub token is required' });
+    }
+
+    try {
+        // Use Octokit to validate the token
+        const { Octokit } = await import('@octokit/rest');
+        const octokit = new Octokit({ auth: token });
+
+        // First, validate the token by getting the authenticated user
+        const { data: user } = await octokit.users.getAuthenticated();
+
+        let result: { valid: boolean; message: string; details?: any } = {
+            valid: true,
+            message: `Authenticated as ${user.login}`,
+            details: { username: user.login }
+        };
+
+        // If owner and repo are provided, check if the repo exists and permissions
+        if (owner && repo) {
+            try {
+                const { data: repoData } = await octokit.repos.get({ owner, repo });
+                result.details = {
+                    ...result.details,
+                    repoExists: true,
+                    permissions: Object.keys(repoData.permissions || {}).filter(k => (repoData.permissions as any)[k])
+                };
+                result.message = `Authenticated as ${user.login}. Repository ${owner}/${repo} exists with push access.`;
+            } catch (repoError: any) {
+                if (repoError.status === 404) {
+                    // Repo doesn't exist, but that's OK - we can create it
+                    result.details = { ...result.details, repoExists: false };
+                    result.message = `Authenticated as ${user.login}. Repository ${owner}/${repo} will be created.`;
+                } else {
+                    throw repoError;
+                }
+            }
+        }
+
+        res.json(result);
+    } catch (e: any) {
+        console.error('GitHub validation failed:', e);
+        const message = e.status === 401
+            ? 'Invalid GitHub token. Please check your Personal Access Token.'
+            : e.message || 'GitHub connection failed';
+        res.status(400).json({ valid: false, message });
+    }
+});
+
+// POST /api/validate/gitlab - Validate GitLab connection
+router.post('/validate/gitlab', async (req, res) => {
+    const { token, host, projectPath } = req.body;
+
+    if (!token) {
+        return res.status(400).json({ error: 'GitLab token is required' });
+    }
+
+    const gitlabHost = host || 'https://gitlab.com';
+
+    try {
+        // Validate the token by getting the current user
+        const userResponse = await fetch(`${gitlabHost}/api/v4/user`, {
+            headers: { 'PRIVATE-TOKEN': token }
+        });
+
+        if (!userResponse.ok) {
+            throw new Error(userResponse.status === 401
+                ? 'Invalid GitLab token. Please check your Personal Access Token.'
+                : `GitLab API error: ${userResponse.statusText}`
+            );
+        }
+
+        const user = await userResponse.json() as { username: string };
+
+        let result: { valid: boolean; message: string; details?: any } = {
+            valid: true,
+            message: `Authenticated as ${user.username}`,
+            details: { username: user.username }
+        };
+
+        // If projectPath is provided, check if the project exists
+        if (projectPath) {
+            const encodedPath = encodeURIComponent(projectPath);
+            const projectResponse = await fetch(`${gitlabHost}/api/v4/projects/${encodedPath}`, {
+                headers: { 'PRIVATE-TOKEN': token }
+            });
+
+            if (projectResponse.ok) {
+                const project = await projectResponse.json() as { permissions?: any };
+                result.details = { ...result.details, repoExists: true };
+                result.message = `Authenticated as ${user.username}. Project ${projectPath} exists.`;
+            } else if (projectResponse.status === 404) {
+                result.details = { ...result.details, repoExists: false };
+                result.message = `Authenticated as ${user.username}. Project ${projectPath} will be created.`;
+            } else {
+                throw new Error(`Failed to check project: ${projectResponse.statusText}`);
+            }
+        }
+
+        res.json(result);
+    } catch (e: any) {
+        console.error('GitLab validation failed:', e);
+        res.status(400).json({ valid: false, message: e.message || 'GitLab connection failed' });
+    }
+});
+
+// ===== SAVED REPOSITORIES ENDPOINTS =====
+
+// GET /api/repositories - List saved repositories for user
+router.get('/repositories', async (req, res) => {
+    const authReq = req as AuthenticatedRequest;
+    const userId = authReq.authUser?.id;
+
+    if (!userId) {
+        return res.status(401).json({ error: 'Authentication required to access saved repositories' });
+    }
+
+    const { type } = req.query; // Optional filter by type
+
+    try {
+        const where: any = { userId };
+        if (type && (type === 'github' || type === 'gitlab')) {
+            where.type = type;
+        }
+
+        const repositories = await prisma.savedRepository.findMany({
+            where,
+            orderBy: { createdAt: 'desc' },
+            select: {
+                id: true,
+                type: true,
+                name: true,
+                description: true,
+                owner: true,
+                repo: true,
+                projectPath: true,
+                host: true,
+                branch: true,
+                createdAt: true,
+                // Note: token is NOT returned for security
+            }
+        });
+
+        res.json(repositories);
+    } catch (e) {
+        console.error('Failed to list repositories:', e);
+        res.status(500).json({ error: 'Failed to list repositories' });
+    }
+});
+
+// POST /api/repositories - Create saved repository
+router.post('/repositories', async (req, res) => {
+    const authReq = req as AuthenticatedRequest;
+    const userId = authReq.authUser?.id;
+
+    if (!userId) {
+        return res.status(401).json({ error: 'Authentication required to save repositories' });
+    }
+
+    const { type, name, description, owner, repo, projectPath, host, branch, token } = req.body;
+
+    if (!type || !name || !token) {
+        return res.status(400).json({ error: 'Type, name, and token are required' });
+    }
+
+    if (type !== 'github' && type !== 'gitlab') {
+        return res.status(400).json({ error: 'Type must be "github" or "gitlab"' });
+    }
+
+    try {
+        const repository = await prisma.savedRepository.create({
+            data: {
+                userId,
+                type,
+                name,
+                description,
+                owner: type === 'github' ? owner : null,
+                repo: type === 'github' ? repo : null,
+                projectPath: type === 'gitlab' ? projectPath : null,
+                host: type === 'gitlab' ? (host || 'https://gitlab.com') : null,
+                branch: type === 'gitlab' ? (branch || 'main') : null,
+                token, // In production, this should be encrypted
+            },
+            select: {
+                id: true,
+                type: true,
+                name: true,
+                description: true,
+                owner: true,
+                repo: true,
+                projectPath: true,
+                host: true,
+                branch: true,
+                createdAt: true,
+            }
+        });
+
+        res.json(repository);
+    } catch (e) {
+        console.error('Failed to create repository:', e);
+        res.status(500).json({ error: 'Failed to save repository' });
+    }
+});
+
+// GET /api/repositories/:id/token - Get token for a saved repository (secure endpoint)
+router.get('/repositories/:id/token', async (req, res) => {
+    const authReq = req as AuthenticatedRequest;
+    const userId = authReq.authUser?.id;
+    const { id } = req.params;
+
+    if (!userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    try {
+        const repository = await prisma.savedRepository.findFirst({
+            where: { id, userId },
+            select: { token: true, type: true, owner: true, repo: true, projectPath: true, host: true, branch: true }
+        });
+
+        if (!repository) {
+            return res.status(404).json({ error: 'Repository not found' });
+        }
+
+        res.json(repository);
+    } catch (e) {
+        console.error('Failed to get repository token:', e);
+        res.status(500).json({ error: 'Failed to get repository' });
+    }
+});
+
+// PUT /api/repositories/:id - Update saved repository
+router.put('/repositories/:id', async (req, res) => {
+    const authReq = req as AuthenticatedRequest;
+    const userId = authReq.authUser?.id;
+    const { id } = req.params;
+
+    if (!userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const { name, description, owner, repo, projectPath, host, branch, token } = req.body;
+
+    try {
+        const existing = await prisma.savedRepository.findFirst({
+            where: { id, userId }
+        });
+
+        if (!existing) {
+            return res.status(404).json({ error: 'Repository not found' });
+        }
+
+        const updateData: any = {};
+        if (name !== undefined) updateData.name = name;
+        if (description !== undefined) updateData.description = description;
+        if (owner !== undefined) updateData.owner = owner;
+        if (repo !== undefined) updateData.repo = repo;
+        if (projectPath !== undefined) updateData.projectPath = projectPath;
+        if (host !== undefined) updateData.host = host;
+        if (branch !== undefined) updateData.branch = branch;
+        if (token !== undefined) updateData.token = token;
+
+        const repository = await prisma.savedRepository.update({
+            where: { id },
+            data: updateData,
+            select: {
+                id: true,
+                type: true,
+                name: true,
+                description: true,
+                owner: true,
+                repo: true,
+                projectPath: true,
+                host: true,
+                branch: true,
+                createdAt: true,
+            }
+        });
+
+        res.json(repository);
+    } catch (e) {
+        console.error('Failed to update repository:', e);
+        res.status(500).json({ error: 'Failed to update repository' });
+    }
+});
+
+// DELETE /api/repositories/:id - Delete saved repository
+router.delete('/repositories/:id', async (req, res) => {
+    const authReq = req as AuthenticatedRequest;
+    const userId = authReq.authUser?.id;
+    const { id } = req.params;
+
+    if (!userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    try {
+        const existing = await prisma.savedRepository.findFirst({
+            where: { id, userId }
+        });
+
+        if (!existing) {
+            return res.status(404).json({ error: 'Repository not found' });
+        }
+
+        await prisma.savedRepository.delete({ where: { id } });
+        res.json({ message: 'Repository deleted' });
+    } catch (e) {
+        console.error('Failed to delete repository:', e);
+        res.status(500).json({ error: 'Failed to delete repository' });
+    }
+});
+
 // ===== HEALTH & METRICS ENDPOINTS =====
 
 // GET /api/health - Health check endpoint
 router.get('/health', async (req, res) => {
     const checks: Record<string, { status: 'healthy' | 'unhealthy' | 'degraded'; latency?: number; error?: string }> = {};
-    
+
     // Check Redis connection
     const redisStart = Date.now();
     try {
@@ -776,7 +1095,7 @@ router.get('/health', async (req, res) => {
         const waiting = await jobQueue.getWaitingCount();
         const active = await jobQueue.getActiveCount();
         const failed = await jobQueue.getFailedCount();
-        checks.queue = { 
+        checks.queue = {
             status: failed > 10 ? 'degraded' : 'healthy',
             latency: 0,
         };
@@ -792,16 +1111,16 @@ router.get('/health', async (req, res) => {
     try {
         // Test 1: Database read operation
         const schemaCount = await prisma.schema.count();
-        
+
         // Test 2: Session lookup (common operation)
         const recentSessions = await prisma.session.findMany({
             take: 1,
             orderBy: { createdAt: 'desc' },
         });
-        
+
         // Test 3: Verify generator service can be loaded
         const generatorLoaded = typeof generatorService !== 'undefined' && generatorService !== null;
-        
+
         checks.synthetic = {
             status: 'healthy',
             latency: Date.now() - syntheticStart,
@@ -812,8 +1131,8 @@ router.get('/health', async (req, res) => {
             generator_loaded: generatorLoaded,
         };
     } catch (e: any) {
-        checks.synthetic = { 
-            status: 'unhealthy', 
+        checks.synthetic = {
+            status: 'unhealthy',
             latency: Date.now() - syntheticStart,
             error: e.message,
         };
@@ -854,7 +1173,7 @@ router.get('/metrics', async (req, res) => {
         const failed = await jobQueue.getFailedCount();
         const schemaCount = await prisma.schema.count();
         const sessionCount = await prisma.session.count();
-        
+
         const uptime = Math.floor((Date.now() - metrics.startTime) / 1000);
 
         const prometheusMetrics = `
