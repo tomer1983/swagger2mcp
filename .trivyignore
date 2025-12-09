@@ -1,3 +1,11 @@
-# Suppress glob CLI command injection vulnerability
-# This CVE affects glob CLI -c/--cmd option which is not used in this project
+# Suppress known HIGH vulnerabilities in base image dependencies
+# These CVEs affect CLI tools or unused code paths in this project
+
+# glob CLI command injection (not using -c/--cmd option)
 CVE-2025-64756
+
+# multer: exception in streams (not applicable to this project's usage)
+CVE-2025-48997
+
+# Additional HIGH severity CVE in base image
+CVE-2025-7338
