@@ -1,0 +1,16 @@
+apiVersion: v2
+name: swagger2mcp
+description: A Helm chart for deploying swagger2mcp - OpenAPI to MCP Server generator
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - swagger
+  - openapi
+  - mcp
+  - api
+maintainers:
+  - name: swagger2mcp
+home: https://github.com/tomer1983/swagger2mcp
+sources:
+  - https://github.com/tomer1983/swagger2mcp

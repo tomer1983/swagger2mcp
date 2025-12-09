@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "swagger2mcp.fullname" . }}-config
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "swagger2mcp.labels" . | nindent 4 }}
+data:
+  PORT: "{{ .Values.backend.service.port }}"
+  REDIS_HOST: "redis"
+  REDIS_PORT: "{{ .Values.redis.service.port }}"
+  DATABASE_URL: "postgresql://{{ .Values.secrets.postgresUser }}:{{ .Values.secrets.postgresPassword }}@postgres:{{ .Values.postgres.service.port }}/{{ .Values.secrets.postgresDb }}"
+  JWT_EXPIRES_IN: "{{ .Values.config.jwtExpiresIn }}"
+  ALLOW_ANONYMOUS: "{{ .Values.config.allowAnonymous }}"
+  ALLOWED_ORIGINS: "{{ .Values.config.allowedOrigins }}"
+  FRONTEND_URL: "http://frontend:{{ .Values.frontend.service.port }}"
+  VITE_API_URL: "http://backend:{{ .Values.backend.service.port }}/api"
