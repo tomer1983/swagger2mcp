@@ -923,6 +923,14 @@ router.post('/repositories', async (req, res) => {
     }
 
     try {
+        const existingName = await prisma.savedRepository.findFirst({
+            where: { userId, name }
+        });
+
+        if (existingName) {
+            return res.status(409).json({ error: 'A saved configuration with this name already exists' });
+        }
+
         const repository = await prisma.savedRepository.create({
             data: {
                 userId,
@@ -947,6 +955,16 @@ router.post('/repositories', async (req, res) => {
                 host: true,
                 branch: true,
                 createdAt: true,
+            }
+        });
+
+        await prisma.audit.create({
+            data: {
+                actorId: userId,
+                action: 'repository.create',
+                target: repository.id,
+                result: 'success',
+                metadata: JSON.stringify({ name, type })
             }
         });
 
@@ -1032,6 +1050,16 @@ router.put('/repositories/:id', async (req, res) => {
             }
         });
 
+        await prisma.audit.create({
+            data: {
+                actorId: userId,
+                action: 'repository.update',
+                target: id,
+                result: 'success',
+                metadata: JSON.stringify({ updates: Object.keys(updateData) })
+            }
+        });
+
         res.json(repository);
     } catch (e) {
         console.error('Failed to update repository:', e);
@@ -1059,6 +1087,17 @@ router.delete('/repositories/:id', async (req, res) => {
         }
 
         await prisma.savedRepository.delete({ where: { id } });
+
+        await prisma.audit.create({
+            data: {
+                actorId: userId,
+                action: 'repository.delete',
+                target: id,
+                result: 'success',
+                metadata: JSON.stringify({ name: existing.name })
+            }
+        });
+
         res.json({ message: 'Repository deleted' });
     } catch (e) {
         console.error('Failed to delete repository:', e);
