@@ -1,9 +1,9 @@
-FROM node:20-alpine
+FROM node:20-slim
 
 WORKDIR /app
 
 # Install OpenSSL for Prisma
-RUN apk add --no-cache openssl
+RUN apt-get update -y && apt-get install -y openssl ca-certificates
 
 # Copy package files and prisma schema first
 COPY package*.json ./
