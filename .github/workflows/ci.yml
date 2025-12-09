@@ -131,7 +131,7 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
-          trivyignores: .trivyignore
+          trivyignores: ${{ github.workspace }}/.trivyignore
 
       - name: Build and push frontend
         uses: docker/build-push-action@v5
@@ -151,7 +151,7 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
-          trivyignores: .trivyignore
+          trivyignores: ${{ github.workspace }}/.trivyignore
 
       - name: Test docker-compose
         run: |
