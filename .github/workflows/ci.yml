@@ -131,7 +131,13 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
-          trivyignores: ${{ github.workspace }}/.trivyignore
+          trivy-config: trivy.yaml
+
+      - name: Debug Trivy files
+        run: |
+          ls -la
+          cat .trivyignore
+          cat trivy.yaml
 
       - name: Build and push frontend
         uses: docker/build-push-action@v5
@@ -151,7 +157,7 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
-          trivyignores: ${{ github.workspace }}/.trivyignore
+          trivy-config: trivy.yaml
 
       - name: Test docker-compose
         run: |
