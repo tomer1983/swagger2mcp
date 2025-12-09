@@ -120,16 +120,16 @@ router.get('/metrics', requireAdmin, async (req, res) => {
 
     // Job statistics from BullMQ
     const jobCounts = await jobQueue.getJobCounts();
-    
+
     // Failed jobs in timeframe
     const failedJobs = await jobQueue.getFailed(0, -1);
-    const recentFailedJobs = failedJobs.filter(job => 
+    const recentFailedJobs = failedJobs.filter(job =>
       job.timestamp && job.timestamp >= startDate.getTime()
     );
 
     // Completed jobs in timeframe  
     const completedJobs = await jobQueue.getCompleted(0, -1);
-    const recentCompletedJobs = completedJobs.filter(job => 
+    const recentCompletedJobs = completedJobs.filter(job =>
       job.finishedOn && job.finishedOn >= startDate.getTime()
     );
 
@@ -199,7 +199,7 @@ router.get('/metrics', requireAdmin, async (req, res) => {
 // ============================================
 
 // Get all configuration grouped by category
-router.get('/config', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/config', requireAdmin, async (req: any, res: any) => {
   try {
     const config = await configService.getAll();
     res.json(config);
@@ -210,10 +210,10 @@ router.get('/config', requireAdmin, async (req: AuthenticatedRequest, res: Respo
 });
 
 // Update configuration values
-router.patch('/config', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
+router.patch('/config', requireAdmin, async (req: any, res: any) => {
   try {
     const updates = req.body as Record<string, any>;
-    
+
     // Convert values to strings for storage
     const stringUpdates: Record<string, string> = {};
     for (const [key, value] of Object.entries(updates)) {
@@ -243,7 +243,7 @@ router.patch('/config', requireAdmin, async (req: AuthenticatedRequest, res: Res
 // ============================================
 
 // List all users with pagination
-router.get('/users', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/users', requireAdmin, async (req: any, res: any) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const pageSize = parseInt(req.query.pageSize as string) || 10;
@@ -260,7 +260,7 @@ router.get('/users', requireAdmin, async (req: AuthenticatedRequest, res: Respon
 });
 
 // Get a single user
-router.get('/users/:id', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/users/:id', requireAdmin, async (req: any, res: any) => {
   try {
     const user = await userService.getUser(req.params.id);
     if (!user) {
@@ -274,10 +274,10 @@ router.get('/users/:id', requireAdmin, async (req: AuthenticatedRequest, res: Re
 });
 
 // Create a new user
-router.post('/users', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
+router.post('/users', requireAdmin, async (req: any, res: any) => {
   try {
     const { email, password, username, displayName, role } = req.body;
-    
+
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
@@ -300,7 +300,7 @@ router.post('/users', requireAdmin, async (req: AuthenticatedRequest, res: Respo
 });
 
 // Update a user
-router.patch('/users/:id', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
+router.patch('/users/:id', requireAdmin, async (req: any, res: any) => {
   try {
     const { username, displayName, role, isActive } = req.body;
     const user = await userService.updateUser(req.params.id, { username, displayName, role, isActive });
@@ -321,7 +321,7 @@ router.patch('/users/:id', requireAdmin, async (req: AuthenticatedRequest, res: 
 });
 
 // Delete (deactivate) a user
-router.delete('/users/:id', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
+router.delete('/users/:id', requireAdmin, async (req: any, res: any) => {
   try {
     // Prevent admin from deleting themselves
     if (req.params.id === req.user?.id) {
@@ -346,7 +346,7 @@ router.delete('/users/:id', requireAdmin, async (req: AuthenticatedRequest, res:
 });
 
 // Reset user password
-router.post('/users/:id/reset-password', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
+router.post('/users/:id/reset-password', requireAdmin, async (req: any, res: any) => {
   try {
     const { newPassword } = req.body;
     if (!newPassword || newPassword.length < 8) {
@@ -375,7 +375,7 @@ router.post('/users/:id/reset-password', requireAdmin, async (req: Authenticated
 // ============================================
 
 // Get audit logs with filtering
-router.get('/audit', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/audit', requireAdmin, async (req: any, res: any) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const pageSize = parseInt(req.query.pageSize as string) || 25;
@@ -398,7 +398,7 @@ router.get('/audit', requireAdmin, async (req: AuthenticatedRequest, res: Respon
 });
 
 // Export audit logs as JSON
-router.get('/audit/export', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/audit/export', requireAdmin, async (req: any, res: any) => {
   try {
     const action = req.query.action as string;
     const actorId = req.query.actorId as string;
@@ -407,7 +407,7 @@ router.get('/audit/export', requireAdmin, async (req: AuthenticatedRequest, res:
     const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
 
     const logs = await auditService.exportJson({ action, actorId, result, startDate, endDate });
-    
+
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Content-Disposition', `attachment; filename=audit-logs-${new Date().toISOString().split('T')[0]}.json`);
     res.json(logs);
@@ -418,7 +418,7 @@ router.get('/audit/export', requireAdmin, async (req: AuthenticatedRequest, res:
 });
 
 // Get available action types for filtering
-router.get('/audit/actions', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/audit/actions', requireAdmin, async (req: any, res: any) => {
   try {
     const actions = await auditService.getActionTypes();
     res.json(actions);

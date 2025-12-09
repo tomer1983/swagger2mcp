@@ -29,13 +29,14 @@ import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
 
-export const Navbar: React.FC = () => {
-  const { user, logout } = useAuth();
-  const { resolvedTheme, toggleTheme } = useTheme();
-  const location = useLocation();
+interface NavLinksProps {
+  currentPath: string;
+  isAdmin: boolean;
+}
 
+const NavLinks: React.FC<NavLinksProps> = ({ currentPath, isAdmin }) => {
   const isActive = (path: string) => {
-    return location.pathname === path || location.pathname.startsWith(path + '/');
+    return currentPath === path || currentPath.startsWith(path + '/');
   };
 
   const navLinkClass = (path: string) => {
@@ -45,9 +46,7 @@ export const Navbar: React.FC = () => {
       : `${base} text-muted-foreground hover:bg-accent hover:text-accent-foreground`;
   };
 
-  const isAdmin = user?.role === 'admin';
-
-  const NavLinks = () => (
+  return (
     <>
       <Link to="/" className={navLinkClass('/')}>
         <Home className="w-4 h-4" />
@@ -78,6 +77,13 @@ export const Navbar: React.FC = () => {
       )}
     </>
   );
+};
+
+export const Navbar: React.FC = () => {
+  const { user, logout } = useAuth();
+  const { resolvedTheme, toggleTheme } = useTheme();
+  const location = useLocation();
+  const isAdmin = user?.role === 'admin';
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -92,7 +98,7 @@ export const Navbar: React.FC = () => {
 
         {/* Desktop nav */}
         <div className="hidden md:flex md:items-center md:gap-1">
-          <NavLinks />
+          <NavLinks currentPath={location.pathname} isAdmin={isAdmin} />
         </div>
 
         <div className="flex flex-1 items-center justify-end gap-2">
@@ -151,7 +157,7 @@ export const Navbar: React.FC = () => {
                 </Link>
                 <Separator />
                 <nav className="flex flex-col gap-2">
-                  <NavLinks />
+                  <NavLinks currentPath={location.pathname} isAdmin={isAdmin} />
                 </nav>
               </div>
             </SheetContent>

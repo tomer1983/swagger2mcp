@@ -41,7 +41,7 @@ export class AuthService {
      */
     static generateToken(userId: string, email: string, username?: string): string {
         const payload: JWTPayload = { userId, email, username };
-        return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+        return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN as any });
     }
 
     /**

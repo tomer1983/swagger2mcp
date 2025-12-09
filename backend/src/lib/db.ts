@@ -7,7 +7,7 @@ const prismaOptions = {
             url: process.env.DATABASE_URL,
         },
     },
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] as const : ['error'] as const,
+    log: (process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error']) as any,
     // Connection pool settings
     // Prisma automatically manages connection pooling based on DATABASE_URL parameters
     // Add ?connection_limit=10&pool_timeout=20 to DATABASE_URL for custom pool size

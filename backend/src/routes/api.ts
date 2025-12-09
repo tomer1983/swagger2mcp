@@ -759,11 +759,11 @@ router.post('/validate/github', async (req, res) => {
 
     try {
         // Use Octokit to validate the token
-        const { Octokit } = await import('@octokit/rest');
+        const { Octokit } = await import('octokit');
         const octokit = new Octokit({ auth: token });
 
         // First, validate the token by getting the authenticated user
-        const { data: user } = await octokit.users.getAuthenticated();
+        const { data: user } = await octokit.request('GET /user');
 
         let result: { valid: boolean; message: string; details?: any } = {
             valid: true,
@@ -774,7 +774,7 @@ router.post('/validate/github', async (req, res) => {
         // If owner and repo are provided, check if the repo exists and permissions
         if (owner && repo) {
             try {
-                const { data: repoData } = await octokit.repos.get({ owner, repo });
+                const { data: repoData } = await octokit.request('GET /repos/{owner}/{repo}', { owner, repo });
                 result.details = {
                     ...result.details,
                     repoExists: true,

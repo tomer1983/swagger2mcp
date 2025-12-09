@@ -9,7 +9,8 @@
         "build": "tsc",
         "postinstall": "prisma generate",
         "migrate": "prisma migrate dev",
-        "migrate:deploy": "prisma migrate deploy"
+        "migrate:deploy": "prisma migrate deploy",
+        "lint": "tsc --noEmit"
     },
     "dependencies": {
         "@gitbeaker/rest": "^43.8.0",
