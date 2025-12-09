@@ -2,6 +2,10 @@
   "name": "swagger2mcp-root",
   "version": "1.0.0",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tomer1983/swagger2mcp.git"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
