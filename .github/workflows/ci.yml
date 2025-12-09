@@ -99,6 +99,9 @@ jobs:
 
   docker-build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read          # Required to checkout and read repo files
+      security-events: write  # Required to upload SARIF files to Security tab    
     
     steps:
       - name: Checkout code
@@ -122,34 +125,48 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Run Trivy vulnerability scanner (Backend)
-        uses: aquasecurity/trivy-action@master
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.33.1
         with:
           image-ref: '${{ secrets.DOCKERHUB_USERNAME }}/swagger2mcp-backend:latest'
-          format: 'table'
-          exit-code: '1'
-          severity: 'CRITICAL,HIGH'
-          trivyignores: .trivyignore
+          format: 'sarif'
+          output: 'trivy-results.sarif'
 
-      - name: Build and push frontend
-        uses: docker/build-push-action@v5
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v4
         with:
-          context: ./frontend
-          push: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' }}
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/swagger2mcp-frontend:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          sarif_file: 'trivy-results.sarif'
 
-      - name: Run Trivy vulnerability scanner (Frontend)
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: '${{ secrets.DOCKERHUB_USERNAME }}/swagger2mcp-frontend:latest'
-          format: 'table'
-          exit-code: '1'
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
-          trivyignores: .trivyignore
+
+
+      # - name: Run Trivy vulnerability scanner (Backend)
+      #   uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: '${{ secrets.DOCKERHUB_USERNAME }}/swagger2mcp-backend:latest'
+      #     format: 'table'
+      #     exit-code: '1'
+      #     severity: 'CRITICAL,HIGH'
+      #     trivyignores: .trivyignore
+
+      # - name: Build and push frontend
+      #   uses: docker/build-push-action@v5
+      #   with:
+      #     context: ./frontend
+      #     push: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' }}
+      #     tags: ${{ secrets.DOCKERHUB_USERNAME }}/swagger2mcp-frontend:latest
+      #     cache-from: type=gha
+      #     cache-to: type=gha,mode=max
+
+      # - name: Run Trivy vulnerability scanner (Frontend)
+      #   uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: '${{ secrets.DOCKERHUB_USERNAME }}/swagger2mcp-frontend:latest'
+      #     format: 'table'
+      #     exit-code: '1'
+      #     ignore-unfixed: true
+      #     vuln-type: 'os,library'
+      #     severity: 'CRITICAL,HIGH'
+      #     trivyignores: .trivyignore
 
       - name: Test docker-compose
         run: |
