@@ -100,7 +100,7 @@ jobs:
   docker-build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read          # Required to checkout and read repo files
+      contents: write          # Required to checkout and read repo files
       security-events: write  # Required to upload SARIF files to Security tab    
     
     steps:
