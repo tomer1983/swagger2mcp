@@ -126,11 +126,11 @@ export const uploadSchema = async (file: File) => {
 };
 
 export const crawlUrl = async (url: string, depth: number, options?: any) => {
-    const res = await api.post('/crawl', { 
-        url, 
-        depth, 
+    const res = await api.post('/crawl', {
+        url,
+        depth,
         sessionId: getSessionId(), // Backward compat, server prefers cookie
-        options 
+        options
     });
     return res.data;
 };
@@ -166,10 +166,10 @@ export interface GenerationOptions {
 }
 
 export const generateServer = async (schemaId: string, language: string, options?: GenerationOptions) => {
-    const res = await api.post('/generate', { 
-        schemaId, 
-        language, 
-        options: options || {} 
+    const res = await api.post('/generate', {
+        schemaId,
+        language,
+        options: options || {}
     }, { responseType: 'blob' });
     return res.data;
 };
@@ -192,6 +192,106 @@ export interface GitLabExportParams {
 export const exportToGitLab = async (params: GitLabExportParams) => {
     const res = await api.post('/export/gitlab', params);
     return res.data;
+};
+
+// ===== Connection Validation =====
+
+export interface ConnectionValidationResult {
+    valid: boolean;
+    message: string;
+    details?: {
+        username?: string;
+        repoExists?: boolean;
+        permissions?: string[];
+    };
+}
+
+export const validateGitHubConnection = async (
+    token: string,
+    owner?: string,
+    repo?: string
+): Promise<ConnectionValidationResult> => {
+    try {
+        const res = await api.post('/validate/github', { token, owner, repo });
+        return res.data;
+    } catch (error: any) {
+        return {
+            valid: false,
+            message: error.response?.data?.error || 'Connection failed',
+        };
+    }
+};
+
+export const validateGitLabConnection = async (
+    token: string,
+    host: string,
+    projectPath?: string
+): Promise<ConnectionValidationResult> => {
+    try {
+        const res = await api.post('/validate/gitlab', { token, host, projectPath });
+        return res.data;
+    } catch (error: any) {
+        return {
+            valid: false,
+            message: error.response?.data?.error || 'Connection failed',
+        };
+    }
+};
+
+// ===== Saved Repositories =====
+
+export interface SavedRepository {
+    id: string;
+    type: 'github' | 'gitlab';
+    name: string;
+    description?: string;
+    owner?: string;
+    repo?: string;
+    projectPath?: string;
+    host?: string;
+    branch?: string;
+    createdAt: string;
+}
+
+export interface SavedRepositoryWithToken extends SavedRepository {
+    token: string;
+}
+
+export interface CreateRepositoryData {
+    type: 'github' | 'gitlab';
+    name: string;
+    description?: string;
+    owner?: string;
+    repo?: string;
+    projectPath?: string;
+    host?: string;
+    branch?: string;
+    token: string;
+}
+
+export const getSavedRepositories = async (type?: 'github' | 'gitlab'): Promise<SavedRepository[]> => {
+    const params = type ? `?type=${type}` : '';
+    const res = await api.get(`/repositories${params}`);
+    return res.data;
+};
+
+export const createSavedRepository = async (data: CreateRepositoryData): Promise<SavedRepository> => {
+    const res = await api.post('/repositories', data);
+    return res.data;
+};
+
+export const getRepositoryWithToken = async (id: string): Promise<SavedRepositoryWithToken> => {
+    const res = await api.get(`/repositories/${id}/token`);
+    return res.data;
+};
+
+export const updateSavedRepository = async (id: string, data: Partial<CreateRepositoryData>): Promise<SavedRepository> => {
+    const res = await api.put(`/repositories/${id}`, data);
+    return res.data;
+};
+
+export const deleteSavedRepository = async (id: string): Promise<void> => {
+    await api.delete(`/repositories/${id}`);
 };
 
 // Job Control API
@@ -279,8 +379,8 @@ export const deleteWebhook = async (webhookId: string) => {
 // ===== Batch Operations =====
 
 export const generateBatch = async (
-    schemaIds: string[], 
-    language: 'typescript' | 'python' = 'typescript', 
+    schemaIds: string[],
+    language: 'typescript' | 'python' = 'typescript',
     options: Partial<GenerationOptions> = {}
 ): Promise<Blob> => {
     const fullOptions: GenerationOptions = {

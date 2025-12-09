@@ -12,6 +12,7 @@ import { AdminUsers } from './pages/admin/AdminUsers';
 import { AdminConfig } from './pages/admin/AdminConfig';
 import { AdminAudit } from './pages/admin/AdminAudit';
 import { LoginPage } from './pages/LoginPage';
+import { SettingsPage } from './pages/SettingsPage';
 import { UserProfile } from './components/UserProfile';
 import './index.css';
 
@@ -24,9 +25,10 @@ function App() {
           <Route path="generate" element={<GeneratePage />} />
           <Route path="schemas" element={<SchemasPage />} />
           <Route path="jobs" element={<JobsPage />} />
+          <Route path="settings" element={<SettingsPage />} />
           <Route path="profile" element={<UserProfile />} />
           <Route path="login" element={<LoginPage />} />
-          
+
           {/* Admin Routes - Protected */}
           <Route
             path="admin"

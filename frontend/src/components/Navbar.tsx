@@ -13,7 +13,8 @@ import {
   User,
   LogOut,
   LogIn,
-  Menu
+  Menu,
+  Settings
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { useTheme } from './theme-provider';
@@ -59,6 +60,10 @@ export const Navbar: React.FC = () => {
       <Link to="/schemas" className={navLinkClass('/schemas')}>
         <Database className="w-4 h-4" />
         <span>Schemas</span>
+      </Link>
+      <Link to="/settings" className={navLinkClass('/settings')}>
+        <Settings className="w-4 h-4" />
+        <span>Settings</span>
       </Link>
       <Link to="/jobs" className={navLinkClass('/jobs')}>
         <Briefcase className="w-4 h-4" />
