@@ -10,7 +10,7 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # Install dependencies (this will run prisma generate via postinstall)
-RUN npm install
+RUN npm install -g npm@latest && npm install
 
 # Copy the rest of the application
 COPY . .
