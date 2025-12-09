@@ -1,0 +1,3 @@
+# Suppress glob CLI command injection vulnerability
+# This CVE affects glob CLI -c/--cmd option which is not used in this project
+CVE-2025-64756
