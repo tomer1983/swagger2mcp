@@ -4,6 +4,9 @@ import { Navbar } from './Navbar';
 import { CommandPalette } from './ui/CommandPalette';
 import { Separator } from './ui/separator';
 import { Badge } from './ui/badge';
+import { Github } from 'lucide-react';
+
+const APP_VERSION = '0.1.0';
 
 export const Layout: React.FC = () => {
   return (
@@ -16,9 +19,9 @@ export const Layout: React.FC = () => {
           <Outlet />
         </div>
       </main>
-      <footer className="border-t">
+      <footer className="border-t border-white/10">
         <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 py-6 sm:flex-row sm:px-6 lg:px-8">
-          <div className="flex gap-4 text-sm text-muted-foreground">
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <a href="/docs" className="hover:text-foreground transition-colors">
               Documentation
             </a>
@@ -31,9 +34,22 @@ export const Layout: React.FC = () => {
               Status
             </a>
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Badge variant="secondary" className="text-xs">{import.meta.env.MODE}</Badge>
-            <span>v0.1.0</span>
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <a
+              href="https://github.com/tomer1983/swagger2mcp"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 hover:text-foreground transition-colors"
+              aria-label="View source on GitHub"
+            >
+              <Github className="h-4 w-4" />
+              <span className="hidden sm:inline">GitHub</span>
+            </a>
+            <Separator orientation="vertical" className="h-4" />
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-xs">{import.meta.env.MODE}</Badge>
+              <span>v{APP_VERSION}</span>
+            </div>
           </div>
         </div>
       </footer>
