@@ -1,4 +1,4 @@
-FROM node:20-slim
+FROM node:22-slim
 
 WORKDIR /app
 
@@ -10,12 +10,7 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # Install dependencies (this will run prisma generate via postinstall)
-# Explicitly patch global cross-spawn to fix CVE-2024-21538
-RUN npm install -g npm@latest && \
-    cd /usr/local/lib/node_modules/npm && \
-    npm install cross-spawn@7.0.6 && \
-    cd /app && \
-    npm install
+RUN npm install -g npm@latest && npm install
 
 # Copy the rest of the application
 COPY . .
