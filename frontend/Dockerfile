@@ -4,11 +4,7 @@ WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm install -g npm@latest \
-    && cd /usr/local/lib/node_modules/npm \
-    && npm install cross-spawn@7.0.6 \
-    && cd /app \
-    && npm install
+RUN npm install -g npm@latest && npm install
 
 COPY . .
 
