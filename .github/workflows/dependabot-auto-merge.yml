@@ -19,6 +19,13 @@ jobs:
         uses: dependabot/fetch-metadata@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          compat-lookup: true
+
+      - name: Debug metadata
+        run: |
+          echo "Update type: ${{ steps.metadata.outputs.update-type }}"
+          echo "Compatibility score: ${{ steps.metadata.outputs.compatibility-score }}"
+          echo "Package ecosystem: ${{ steps.metadata.outputs.package-ecosystem }}"
 
       - name: Update PR branch if behind
         run: |
@@ -27,15 +34,21 @@ jobs:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Enable auto-merge for patch updates
-        if: steps.metadata.outputs.update-type == 'version-update:semver-patch'
+      # Auto-merge patch updates with high compatibility (>= 75%)
+      - name: Enable auto-merge for safe patch updates
+        if: |
+          steps.metadata.outputs.update-type == 'version-update:semver-patch' &&
+          (steps.metadata.outputs.compatibility-score >= 75 || steps.metadata.outputs.compatibility-score == '')
         run: gh pr merge --auto --squash "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Enable auto-merge for minor updates
-        if: steps.metadata.outputs.update-type == 'version-update:semver-minor'
+      # Auto-merge minor updates only with very high compatibility (>= 90%)
+      - name: Enable auto-merge for safe minor updates
+        if: |
+          steps.metadata.outputs.update-type == 'version-update:semver-minor' &&
+          (steps.metadata.outputs.compatibility-score >= 90 || steps.metadata.outputs.compatibility-score == '')
         run: gh pr merge --auto --squash "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
