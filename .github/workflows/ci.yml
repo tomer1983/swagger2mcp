@@ -2,9 +2,9 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [ master, develop ]
   pull_request:
-    branches: [ main, master, develop ]
+    branches: [ master, develop ]
 
 jobs:
   codeql-analysis:
@@ -159,7 +159,7 @@ jobs:
 
       # Push backend image to Docker Hub (only on main/master)
       - name: Push backend to Docker Hub
-        if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/master'
         uses: docker/build-push-action@v5
         with:
           context: ./backend
@@ -180,7 +180,7 @@ jobs:
 
       # Push frontend image to Docker Hub (only on main/master)
       - name: Push frontend to Docker Hub
-        if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/master'
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
@@ -362,8 +362,8 @@ jobs:
 
   semantic-release:
     runs-on: ubuntu-latest
-    needs: [lint-and-test, docker-build]
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop')
+    needs: [lint-and-test, docker-build, codeql-analysis]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop')
     permissions:
       contents: write
       issues: write
