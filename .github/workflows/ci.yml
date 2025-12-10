@@ -135,7 +135,8 @@ jobs:
 
       - name: Upload Trivy backend scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4
-        if: always() && github.event_name != 'pull_request'
+        if: always()
+        # if: always() && github.event_name != 'pull_request'
         with:
           sarif_file: 'trivy-backend-results.sarif'
           category: 'trivy-backend'
