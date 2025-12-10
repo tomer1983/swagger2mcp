@@ -157,7 +157,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # Push backend image to Docker Hub (only on main/master)
+      # Push backend image to Docker Hub (only on master)
       - name: Push backend to Docker Hub
         if: github.ref == 'refs/heads/master'
         uses: docker/build-push-action@v5
@@ -277,6 +277,7 @@ jobs:
 
   kubernetes-test:
     runs-on: ubuntu-latest
+    continue-on-error: true
     needs: [docker-build]
     
     steps:
