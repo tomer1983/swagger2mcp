@@ -14,7 +14,7 @@
     },
     "dependencies": {
         "@gitbeaker/rest": "^43.8.0",
-        "@prisma/client": "^5.22.0",
+        "@prisma/client": "^7.1.0",
         "@types/bcryptjs": "^2.4.6",
         "@types/express-session": "^1.18.2",
         "@types/js-yaml": "^4.0.9",
