@@ -3,6 +3,7 @@ name: CI Pipeline
 on:
   push:
     branches: [ master, develop ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ master, develop ]
 
@@ -140,8 +141,13 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Extract tag name
+        id: get_tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: echo "TAG_NAME=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
       - name: Login to Docker Hub
-        if: github.repository == 'tomer1983/swagger2mcp' && (github.ref == 'refs/heads/master')
+        if: github.repository == 'tomer1983/swagger2mcp' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v'))
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -157,14 +163,16 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # Push backend image to Docker Hub (only on master)
+      # Push backend image to Docker Hub
       - name: Push backend to Docker Hub
-        if: github.ref == 'refs/heads/master'
+        if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v')
         uses: docker/build-push-action@v5
         with:
           context: ./backend
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/swagger2mcp-backend:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/swagger2mcp-backend:latest
+            ${{ startsWith(github.ref, 'refs/tags/v') && format('{0}/swagger2mcp-backend:{1}', secrets.DOCKERHUB_USERNAME, steps.get_tag.outputs.TAG_NAME) || '' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -178,14 +186,16 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # Push frontend image to Docker Hub (only on main/master)
+      # Push frontend image to Docker Hub
       - name: Push frontend to Docker Hub
-        if: github.ref == 'refs/heads/master'
+        if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v')
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/swagger2mcp-frontend:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/swagger2mcp-frontend:latest
+            ${{ startsWith(github.ref, 'refs/tags/v') && format('{0}/swagger2mcp-frontend:{1}', secrets.DOCKERHUB_USERNAME, steps.get_tag.outputs.TAG_NAME) || '' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -361,41 +371,22 @@ jobs:
         run: |
           kind delete cluster --name swagger2mcp-test
 
-  semantic-release:
+  create-release:
     runs-on: ubuntu-latest
-    needs: [lint-and-test, docker-build, codeql-analysis]
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop')
+    needs: [lint-and-test, docker-build]
+    if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write
-      issues: write
-      pull-requests: write
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
         with:
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Install semantic-release dependencies
-        run: |
-          npm install -g semantic-release@latest
-          npm install -g @semantic-release/changelog@latest
-          npm install -g @semantic-release/git@latest
-          npm install -g @semantic-release/github@latest
-          npm install -g @semantic-release/commit-analyzer@latest
-          npm install -g @semantic-release/release-notes-generator@latest
-
-      - name: Run semantic-release
+          generate_release_notes: true
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GIT_AUTHOR_NAME: github-actions[bot]
-          GIT_AUTHOR_EMAIL: github-actions[bot]@users.noreply.github.com
-          GIT_COMMITTER_NAME: github-actions[bot]
-          GIT_COMMITTER_EMAIL: github-actions[bot]@users.noreply.github.com
-        run: npx semantic-release
