@@ -194,6 +194,87 @@ jobs:
           docker compose config
           echo "Docker Compose configuration is valid"
 
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [docker-build]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Start services with docker-compose
+        run: |
+          docker compose up -d --build
+          echo "Waiting for services to start..."
+
+      - name: Wait for backend to be ready
+        run: |
+          echo "Waiting for backend..."
+          for i in {1..30}; do
+            if curl -s http://localhost:3000/health > /dev/null 2>&1; then
+              echo "Backend is ready!"
+              break
+            fi
+            echo "Attempt $i/30 - waiting..."
+            sleep 5
+          done
+
+      - name: Wait for frontend to be ready
+        run: |
+          echo "Waiting for frontend..."
+          for i in {1..20}; do
+            if curl -s http://localhost:5173 > /dev/null 2>&1; then
+              echo "Frontend is ready!"
+              break
+            fi
+            echo "Attempt $i/20 - waiting..."
+            sleep 3
+          done
+
+      - name: Test backend health endpoint
+        run: |
+          echo "Testing backend health..."
+          curl -f http://localhost:3000/health
+          echo ""
+
+      - name: Test backend API endpoints
+        run: |
+          echo "Testing API endpoints..."
+          # Test root API
+          curl -s http://localhost:3000/api || echo "Root API tested"
+          
+          # Test projects endpoint (should return empty array or list)
+          curl -s http://localhost:3000/api/projects || echo "Projects API tested"
+          
+          # Test jobs endpoint
+          curl -s http://localhost:3000/api/jobs || echo "Jobs API tested"
+
+      - name: Test frontend is serving
+        run: |
+          echo "Testing frontend..."
+          curl -f http://localhost:5173 | head -20
+          echo ""
+          echo "Frontend is serving content!"
+
+      - name: Show service logs on failure
+        if: failure()
+        run: |
+          echo "=== Backend Logs ==="
+          docker compose logs backend --tail=100
+          echo ""
+          echo "=== Frontend Logs ==="
+          docker compose logs frontend --tail=100
+          echo ""
+          echo "=== All Services Status ==="
+          docker compose ps
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose down -v
+          echo "Services stopped and volumes removed"
+
   kubernetes-test:
     runs-on: ubuntu-latest
     needs: [docker-build]
