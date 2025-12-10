@@ -1,5 +1,7 @@
 # Swagger2MCP
 
+[![CI Pipeline](https://github.com/tomer1983/swagger2mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/tomer1983/swagger2mcp/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/tomer1983/swagger2mcp/actions/workflows/ci.yml/badge.svg?branch=master&event=push)](https://github.com/tomer1983/swagger2mcp/security/code-scanning)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)](https://www.docker.com/)
