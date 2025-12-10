@@ -2,72 +2,120 @@ import React, { useState } from 'react';
 import { UploadTab } from '../components/UploadTab';
 import { CrawlTab } from '../components/CrawlTab';
 import { PasteTab } from '../components/PasteTab';
-import { FileUp, Globe, ClipboardPaste, Sparkles } from 'lucide-react';
+import { TerminalLog } from '../components/TerminalLog';
+import { FileUp, Globe, ClipboardPaste } from 'lucide-react';
 
 export const GeneratePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'upload' | 'paste' | 'crawl'>('upload');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [logs, setLogs] = useState<any[]>([]);
+
+  // Simulation of "Matrix" generation logs
+  const startSimulation = () => {
+    setIsGenerating(true);
+    setLogs([{ type: 'cmd', message: 'init_sequence --target=openapi_spec' }]);
+
+    const sequence = [
+      { delay: 800, msg: 'Analyzing schema structure...', type: 'info' },
+      { delay: 1600, msg: 'Found 12 paths and 4 definitions.', type: 'info' },
+      { delay: 2400, msg: 'Validating references... OK', type: 'success' },
+      { delay: 3200, msg: 'Generating Typescript interfaces...', type: 'info' },
+      { delay: 4500, msg: 'Constructing MCP resource handlers...', type: 'info' },
+      { delay: 5500, msg: 'Optimizing prompt context window...', type: 'warning' },
+      { delay: 7000, msg: 'Build complete. Server ready.', type: 'success' },
+    ];
+
+    let accumulatedDelay = 0;
+    sequence.forEach(({ delay, msg, type }) => {
+      accumulatedDelay += delay;
+      setTimeout(() => {
+        setLogs(prev => [...prev, { type, message: msg }]);
+      }, accumulatedDelay);
+    });
+
+    setTimeout(() => {
+      setLogs(prev => [...prev, { type: 'cmd', message: 'process_exit(0)' }]);
+      // In real app, we would redirect here or show download button
+    }, accumulatedDelay + 1000);
+  };
+
+  const handleJobCreated = (jobId: string) => {
+    console.log('Job Started:', jobId);
+    startSimulation();
+  };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="mb-10">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4 border border-primary/20">
-          <Sparkles className="w-3.5 h-3.5" />
-          MCP Generation
+    <div className="max-w-5xl mx-auto">
+      {/* Header - Terminal Style */}
+      <div className="mb-8 font-mono">
+        <div className="text-sm text-primary mb-2 flex items-center gap-2">
+          <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+          SYSTEM_READY
         </div>
-        <h1 className="text-3xl font-bold text-foreground mb-3">
-          Generate MCP Server
+        <h1 className="text-4xl font-bold text-foreground tracking-tight">
+          MCP GENERATION MATRIX
         </h1>
-        <p className="text-muted-foreground text-lg">
-          Upload an OpenAPI schema file or crawl a URL to discover schemas automatically.
+        <p className="text-muted-foreground mt-2">
+          {'>'} Select input vector to initialize server construction sequence.
         </p>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="flex gap-1 mb-6 p-1 bg-muted/50 rounded-xl w-fit">
-        <button
-          data-tab="upload"
-          onClick={() => setActiveTab('upload')}
-          className={`flex items-center gap-2 px-5 py-2.5 font-medium rounded-lg transition-all duration-200 ${
-            activeTab === 'upload'
-              ? 'bg-background text-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
-          }`}
-        >
-          <FileUp className="w-4 h-4" />
-          Upload File
-        </button>
-        <button
-          data-tab="paste"
-          onClick={() => setActiveTab('paste')}
-          className={`flex items-center gap-2 px-5 py-2.5 font-medium rounded-lg transition-all duration-200 ${
-            activeTab === 'paste'
-              ? 'bg-background text-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
-          }`}
-        >
-          <ClipboardPaste className="w-4 h-4" />
-          Paste Schema
-        </button>
-        <button
-          data-tab="crawl"
-          onClick={() => setActiveTab('crawl')}
-          className={`flex items-center gap-2 px-5 py-2.5 font-medium rounded-lg transition-all duration-200 ${
-            activeTab === 'crawl'
-              ? 'bg-background text-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
-          }`}
-        >
-          <Globe className="w-4 h-4" />
-          Crawl URL
-        </button>
-      </div>
+      {isGenerating ? (
+        <div className="glass-card rounded-xl border border-primary/20 p-6 min-h-[400px] flex flex-col bg-black/40">
+          <TerminalLog logs={logs} className="flex-1" />
+          <button
+            onClick={() => { setIsGenerating(false); setLogs([]) }}
+            className="mt-4 self-end text-xs text-muted-foreground hover:text-foreground underline font-mono"
+          >
+            [RESET_SEQUENCE]
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* Tab Navigation - Cyber Style */}
+          <div className="flex gap-4 mb-8 border-b border-border/40 pb-1">
+            <button
+              onClick={() => setActiveTab('upload')}
+              className={`flex items-center gap-2 px-4 py-3 font-mono text-sm border-b-2 transition-all duration-300 ${activeTab === 'upload'
+                ? 'border-primary text-primary shadow-[0_4px_12px_-4px_var(--primary)]'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+            >
+              <FileUp className="w-4 h-4" />
+              [UPLOAD_BINARY]
+            </button>
+            <button
+              onClick={() => setActiveTab('paste')}
+              className={`flex items-center gap-2 px-4 py-3 font-mono text-sm border-b-2 transition-all duration-300 ${activeTab === 'paste'
+                ? 'border-primary text-primary shadow-[0_4px_12px_-4px_var(--primary)]'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+            >
+              <ClipboardPaste className="w-4 h-4" />
+              [INPUT_BUFFER]
+            </button>
+            <button
+              onClick={() => setActiveTab('crawl')}
+              className={`flex items-center gap-2 px-4 py-3 font-mono text-sm border-b-2 transition-all duration-300 ${activeTab === 'crawl'
+                ? 'border-primary text-primary shadow-[0_4px_12px_-4px_var(--primary)]'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+            >
+              <Globe className="w-4 h-4" />
+              [NETWORK_CRAWL]
+            </button>
+          </div>
 
-      {/* Tab Content */}
-      <div className="bg-card/50 backdrop-blur-sm rounded-2xl border border-border/50 p-8 shadow-sm">
-        {activeTab === 'upload' && <UploadTab onJobCreated={(_jobId) => console.log('Job created:', _jobId)} />}
-        {activeTab === 'paste' && <PasteTab onJobCreated={() => console.log('Schema pasted')} />}
-        {activeTab === 'crawl' && <CrawlTab onJobCreated={(_jobId) => console.log('Crawl job created:', _jobId)} />}
-      </div>
+          {/* Content Area - Glass Card */}
+          <div className="glass-card rounded-xl border border-border/40 p-1 bg-gradient-to-br from-white/5 to-transparent">
+            <div className="bg-background/40 backdrop-blur-md rounded-lg p-8">
+              {activeTab === 'upload' && <UploadTab onJobCreated={handleJobCreated} />}
+              {activeTab === 'paste' && <PasteTab onJobCreated={() => handleJobCreated('paste-job')} />}
+              {activeTab === 'crawl' && <CrawlTab onJobCreated={(id) => handleJobCreated(id)} />}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

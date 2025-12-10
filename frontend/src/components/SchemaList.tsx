@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
-import { Download, Github, FileCode, GitlabIcon, Settings2, Edit, FileUp, Globe, Trash2, RefreshCw, CheckCircle2, XCircle, Loader2, Save } from 'lucide-react';
+import { Download, Github, FileCode, GitlabIcon, Settings2, Edit, FileUp, Globe, Trash2, RefreshCw, CheckCircle2, XCircle, Loader2, Save, Network } from 'lucide-react';
 import { getSchemas, generateServer, exportToGitHub, exportToGitLab, deleteSchema, validateGitHubConnection, validateGitLabConnection, getSavedRepositories, createSavedRepository, getRepositoryWithToken } from '../lib/api';
 import type { GenerationOptions, SavedRepository } from '../lib/api';
 import { GenerateModal } from './GenerateModal';
@@ -31,7 +31,16 @@ interface EditorState {
     content: string;
 }
 
-export const SchemaList = ({ refresh }: { refresh: number }) => {
+
+interface Schema {
+    id: string;
+    type: string;
+    url?: string;
+    createdAt: string;
+    content: string;
+}
+
+export const SchemaList = ({ refresh, onVisualize }: { refresh: number, onVisualize?: (schema: Schema) => void }) => {
     const [schemas, setSchemas] = useState<Schema[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -435,6 +444,18 @@ export const SchemaList = ({ refresh }: { refresh: number }) => {
                                     >
                                         <Download className="h-4 w-4" aria-hidden="true" />
                                         Download
+                                    </Button>
+
+                                    {/* Visualize Button */}
+                                    <Button
+                                        onClick={() => onVisualize?.(schema)}
+                                        variant="secondary"
+                                        size="sm"
+                                        className="whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white"
+                                        aria-label="Visualize Schema"
+                                    >
+                                        <Network className="h-4 w-4" aria-hidden="true" />
+                                        Visualize
                                     </Button>
 
                                     <Button

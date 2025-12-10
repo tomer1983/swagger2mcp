@@ -10,7 +10,14 @@ const APP_VERSION = '0.1.0';
 
 export const Layout: React.FC = () => {
   return (
-    <div className="relative flex min-h-screen flex-col bg-background">
+    <div className="relative flex min-h-screen flex-col">
+      {/* Animated Background Mesh */}
+      <div className="fixed inset-0 z-[-1] overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/20 blur-[120px] animate-float" />
+        <div className="absolute top-[20%] right-[-10%] w-[30%] h-[50%] rounded-full bg-accent/20 blur-[100px] animate-float" style={{ animationDelay: '-2s' }} />
+        <div className="absolute bottom-[-10%] left-[20%] w-[50%] h-[30%] rounded-full bg-primary/10 blur-[140px] animate-float" style={{ animationDelay: '-4s' }} />
+      </div>
+
       <Navbar />
       {/* Command Palette - accessible via Ctrl+K / ⌘K */}
       <CommandPalette />

@@ -102,70 +102,70 @@ export function CommandPalette() {
         // Admin (conditional)
         ...(isAdmin
             ? [
-                  {
-                      id: 'admin',
-                      label: 'Admin Dashboard',
-                      icon: Shield,
-                      action: () => navigate('/admin'),
-                      group: 'Admin',
-                      keywords: ['admin', 'dashboard', 'overview'],
-                  },
-                  {
-                      id: 'admin-users',
-                      label: 'Manage Users',
-                      icon: Users,
-                      action: () => navigate('/admin/users'),
-                      group: 'Admin',
-                      keywords: ['users', 'manage', 'accounts'],
-                  },
-                  {
-                      id: 'admin-config',
-                      label: 'System Configuration',
-                      icon: Settings,
-                      action: () => navigate('/admin/config'),
-                      group: 'Admin',
-                      keywords: ['config', 'settings', 'system'],
-                  },
-                  {
-                      id: 'admin-audit',
-                      label: 'Audit Logs',
-                      icon: ClipboardList,
-                      action: () => navigate('/admin/audit'),
-                      group: 'Admin',
-                      keywords: ['audit', 'logs', 'history'],
-                  },
-              ]
+                {
+                    id: 'admin',
+                    label: 'Admin Dashboard',
+                    icon: Shield,
+                    action: () => navigate('/admin'),
+                    group: 'Admin',
+                    keywords: ['admin', 'dashboard', 'overview'],
+                },
+                {
+                    id: 'admin-users',
+                    label: 'Manage Users',
+                    icon: Users,
+                    action: () => navigate('/admin/users'),
+                    group: 'Admin',
+                    keywords: ['users', 'manage', 'accounts'],
+                },
+                {
+                    id: 'admin-config',
+                    label: 'System Configuration',
+                    icon: Settings,
+                    action: () => navigate('/admin/config'),
+                    group: 'Admin',
+                    keywords: ['config', 'settings', 'system'],
+                },
+                {
+                    id: 'admin-audit',
+                    label: 'Audit Logs',
+                    icon: ClipboardList,
+                    action: () => navigate('/admin/audit'),
+                    group: 'Admin',
+                    keywords: ['audit', 'logs', 'history'],
+                },
+            ]
             : []),
         // User actions
         ...(user
             ? [
-                  {
-                      id: 'profile',
-                      label: 'My Profile',
-                      icon: User,
-                      action: () => navigate('/profile'),
-                      group: 'Account',
-                      keywords: ['profile', 'account', 'settings'],
-                  },
-                  {
-                      id: 'logout',
-                      label: 'Sign Out',
-                      icon: LogOut,
-                      action: () => logout(),
-                      group: 'Account',
-                      keywords: ['logout', 'sign out', 'exit'],
-                  },
-              ]
+                {
+                    id: 'profile',
+                    label: 'My Profile',
+                    icon: User,
+                    action: () => navigate('/profile'),
+                    group: 'Account',
+                    keywords: ['profile', 'account', 'settings'],
+                },
+                {
+                    id: 'logout',
+                    label: 'Sign Out',
+                    icon: LogOut,
+                    action: () => logout(),
+                    group: 'Account',
+                    keywords: ['logout', 'sign out', 'exit'],
+                },
+            ]
             : [
-                  {
-                      id: 'login',
-                      label: 'Sign In',
-                      icon: User,
-                      action: () => navigate('/login'),
-                      group: 'Account',
-                      keywords: ['login', 'sign in', 'account'],
-                  },
-              ]),
+                {
+                    id: 'login',
+                    label: 'Sign In',
+                    icon: User,
+                    action: () => navigate('/login'),
+                    group: 'Account',
+                    keywords: ['login', 'sign in', 'account'],
+                },
+            ]),
     ];
 
     // Group commands
@@ -215,7 +215,7 @@ export function CommandPalette() {
                             className="fixed left-1/2 top-[20%] z-50 w-full max-w-lg -translate-x-1/2"
                         >
                             <Command
-                                className="rounded-xl border border-border bg-popover shadow-2xl overflow-hidden"
+                                className="glass-card rounded-xl overflow-hidden"
                                 loop
                             >
                                 {/* Search input */}
