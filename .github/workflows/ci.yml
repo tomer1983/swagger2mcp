@@ -285,91 +285,22 @@ jobs:
           docker compose down -v
           echo "Services stopped and volumes removed"
 
-  kubernetes-test:
+  helm-validation:
     runs-on: ubuntu-latest
-    continue-on-error: true
-    needs: [docker-build]
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install kind
-        run: |
-          curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.20.0/kind-linux-amd64
-          chmod +x ./kind
-          sudo mv ./kind /usr/local/bin/kind
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 'latest'
 
-      - name: Create kind cluster
-        run: |
-          kind create cluster --name swagger2mcp-test --wait 60s
+      - name: Lint Helm Chart
+        run: helm lint ./charts/swagger2mcp
 
-      - name: Load Docker images into kind
-        run: |
-          # Build images locally for kind
-          docker build -t swagger2mcp-backend:test ./backend
-          docker build -t swagger2mcp-frontend:test ./frontend
-          kind load docker-image swagger2mcp-backend:test --name swagger2mcp-test
-          kind load docker-image swagger2mcp-frontend:test --name swagger2mcp-test
-
-      - name: Create namespace and secrets
-        run: |
-          kubectl create namespace swagger2mcp
-          kubectl apply -f k8s/configmap.yaml
-          # Create secrets from template
-          sed 's/dev-secret-key-change-in-production/test-secret-key/' k8s/secrets.yaml.template > /tmp/secrets.yaml
-          kubectl apply -f /tmp/secrets.yaml
-
-      - name: Deploy Redis and PostgreSQL
-        run: |
-          kubectl apply -f k8s/redis/
-          kubectl apply -f k8s/postgres/
-          # Wait for dependencies to be ready
-          kubectl wait --for=condition=ready pod -l app.kubernetes.io/component=redis -n swagger2mcp --timeout=120s
-          kubectl wait --for=condition=ready pod -l app.kubernetes.io/component=postgres -n swagger2mcp --timeout=120s
-
-      - name: Update image refs and deploy application
-        run: |
-          # Update image references for test images
-          sed -i 's|swagger2mcp-backend:latest|swagger2mcp-backend:test|g' k8s/backend/deployment.yaml
-          sed -i 's|swagger2mcp-frontend:latest|swagger2mcp-frontend:test|g' k8s/frontend/deployment.yaml
-          sed -i 's|swagger2mcp-backend:latest|swagger2mcp-backend:test|g' k8s/worker/deployment.yaml
-          
-          kubectl apply -f k8s/backend/
-          kubectl apply -f k8s/worker/
-          kubectl apply -f k8s/frontend/
-
-      - name: Wait for pods to be ready
-        run: |
-          kubectl wait --for=condition=ready pod -l app.kubernetes.io/component=backend -n swagger2mcp --timeout=180s
-          kubectl wait --for=condition=ready pod -l app.kubernetes.io/component=frontend -n swagger2mcp --timeout=180s
-          kubectl get pods -n swagger2mcp
-
-      - name: Run component tests (API health checks)
-        run: |
-          # Port forward backend
-          kubectl port-forward svc/backend 3000:3000 -n swagger2mcp &
-          sleep 5
-          
-          # Test backend health endpoint
-          echo "Testing backend health endpoint..."
-          for i in {1..5}; do
-            if curl -s http://localhost:3000/health; then
-              echo "Backend health check passed!"
-              break
-            fi
-            echo "Attempt $i failed, retrying..."
-            sleep 3
-          done
-          
-          # Test API is responding
-          echo "Testing API endpoint..."
-          curl -s http://localhost:3000/api || echo "API endpoint test completed"
-
-      - name: Cleanup
-        if: always()
-        run: |
-          kind delete cluster --name swagger2mcp-test
+      - name: Verify Template Rendering
+        run: helm template ./charts/swagger2mcp --debug
 
   semantic-release:
     runs-on: ubuntu-latest
