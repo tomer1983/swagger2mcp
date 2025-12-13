@@ -20,8 +20,16 @@ spec:
         {{- include "swagger2mcp.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: postgres
     spec:
+      {{- with .Values.global.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: postgres
+          {{- with .Values.global.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           image: {{ include "swagger2mcp.image" (dict "root" . "image" .Values.postgres.image) | quote }}
           ports:
             - containerPort: {{ .Values.postgres.service.port }}

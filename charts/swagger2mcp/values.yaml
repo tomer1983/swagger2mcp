@@ -8,6 +8,15 @@ global:
   repository: ""
   # Storage class for all persistent volumes
   storageClass: ""
+  # Platform: kubernetes or openshift
+  platform: kubernetes
+  # Pod security context (applied to all pods)
+  podSecurityContext: {}
+    # fsGroup: 1000
+  # Container security context (applied to all containers)
+  containerSecurityContext: {}
+    # runAsNonRoot: true
+    # allowPrivilegeEscalation: false
 
 # Backend configuration
 backend:
