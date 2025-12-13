@@ -1,0 +1,439 @@
+name: Backup & Disaster Recovery
+
+# This workflow provides templates and validation for backup procedures
+# Uncomment the schedule/triggers as needed for your production environment
+
+on:
+  # schedule:
+  #   # Daily backup at 2 AM UTC
+  #   - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      backup_type:
+        description: 'Type of backup'
+        required: true
+        type: choice
+        options:
+          - database
+          - full
+          - config
+        default: 'database'
+
+# Note: This is a template workflow
+# For production, you'll need to:
+# 1. Configure proper storage (S3, GCS, Azure Blob, etc.)
+# 2. Set up encryption for backups
+# 3. Implement retention policies
+# 4. Test restore procedures regularly
+
+jobs:
+  validate-backup-config:
+    name: Validate Backup Configuration
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for backup documentation
+        run: |
+          echo "Checking for backup and recovery documentation..."
+          
+          if [ -f "docs/BACKUP_RECOVERY.md" ] || [ -f "BACKUP_RECOVERY.md" ]; then
+            echo "✓ Backup documentation exists"
+          else
+            echo "::warning::No backup/recovery documentation found. Creating recommendation..."
+            
+            cat > BACKUP_RECOVERY_TEMPLATE.md << 'EOF'
+          # Backup and Disaster Recovery Guide
+
+          ## Backup Strategy
+
+          ### What to Backup
+          1. **Database (PostgreSQL)**
+             - User data, sessions, schemas
+             - Frequency: Daily
+             - Retention: 30 days
+
+          2. **Uploaded Files**
+             - Location: backend/uploads/
+             - Frequency: Daily
+             - Retention: 7 days
+
+          3. **Configuration**
+             - Environment files (encrypted)
+             - Secrets (in secrets manager)
+             - Frequency: On change
+             - Retention: 90 days
+
+          ### Backup Procedures
+
+          #### Manual Database Backup
+          ```bash
+          # Using pg_dump
+          pg_dump -h localhost -U postgres -d swagger2mcp -F c -b -v -f backup_$(date +%Y%m%d_%H%M%S).dump
+
+          # Using Kubernetes
+          kubectl exec -n swagger2mcp deployment/postgres -- pg_dump -U postgres swagger2mcp > backup.sql
+          ```
+
+          #### Automated Backup (Kubernetes CronJob)
+          See `k8s/backup-cronjob.yaml` for automated backup setup.
+
+          ### Recovery Procedures
+
+          #### Database Restore
+          ```bash
+          # From custom format dump
+          pg_restore -h localhost -U postgres -d swagger2mcp -v backup.dump
+
+          # From SQL file
+          psql -h localhost -U postgres -d swagger2mcp < backup.sql
+          ```
+
+          #### Application Recovery
+          1. Deploy database from backup
+          2. Apply any pending migrations
+          3. Restore uploaded files
+          4. Deploy application services
+          5. Verify health endpoints
+
+          ### Testing Recovery
+          - Test restores monthly in staging environment
+          - Document recovery time objectives (RTO): < 1 hour
+          - Document recovery point objectives (RPO): < 24 hours
+
+          ### Backup Validation
+          - Verify backup files are not corrupted
+          - Check backup file sizes are reasonable
+          - Test random restore samples monthly
+
+          ## Disaster Recovery
+
+          ### Scenarios
+
+          1. **Database Corruption**
+             - Restore from latest backup
+             - Apply transaction logs if available
+             - Verify data integrity
+
+          2. **Complete Service Failure**
+             - Provision new infrastructure
+             - Restore database
+             - Deploy application from container registry
+             - Restore configuration
+
+          3. **Regional Outage**
+             - Failover to secondary region (if configured)
+             - Update DNS records
+             - Verify service health
+
+          ### Contact Information
+          - On-call: [Your on-call contact]
+          - Backup administrator: [Admin contact]
+          - Cloud provider support: [Support contact]
+          EOF
+            
+            echo "Created BACKUP_RECOVERY_TEMPLATE.md with recommended procedures"
+          fi
+
+      - name: Check for backup scripts
+        run: |
+          echo "Checking for backup automation scripts..."
+          
+          # Check for backup scripts in common locations
+          if ls scripts/backup* 2>/dev/null || ls k8s/*backup*.yaml 2>/dev/null; then
+            echo "✓ Found backup automation"
+          else
+            echo "::notice::No backup automation scripts found. Consider adding them."
+          fi
+
+  create-backup-example:
+    name: Create Backup Examples
+    runs-on: ubuntu-latest
+    if: github.event.inputs.backup_type != ''
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create Kubernetes backup CronJob example
+        run: |
+          mkdir -p k8s/backup-examples
+          
+          cat > k8s/backup-examples/postgres-backup-cronjob.yaml << 'EOF'
+          apiVersion: batch/v1
+          kind: CronJob
+          metadata:
+            name: postgres-backup
+            namespace: swagger2mcp
+          spec:
+            # Run daily at 2 AM UTC
+            schedule: "0 2 * * *"
+            successfulJobsHistoryLimit: 3
+            failedJobsHistoryLimit: 3
+            jobTemplate:
+              spec:
+                template:
+                  spec:
+                    restartPolicy: OnFailure
+                    containers:
+                    - name: postgres-backup
+                      image: postgres:15-alpine
+                      env:
+                      - name: PGHOST
+                        value: postgres-service
+                      - name: PGUSER
+                        valueFrom:
+                          secretKeyRef:
+                            name: postgres-credentials
+                            key: username
+                      - name: PGPASSWORD
+                        valueFrom:
+                          secretKeyRef:
+                            name: postgres-credentials
+                            key: password
+                      - name: PGDATABASE
+                        value: swagger2mcp
+                      - name: BACKUP_BUCKET
+                        value: "s3://your-backup-bucket"
+                      command:
+                      - /bin/sh
+                      - -c
+                      - |
+                        BACKUP_FILE="backup_$(date +%Y%m%d_%H%M%S).dump"
+                        
+                        # Create backup
+                        pg_dump -F c -b -v -f "/tmp/${BACKUP_FILE}"
+                        
+                        # Upload to S3 (requires aws-cli in container)
+                        # aws s3 cp "/tmp/${BACKUP_FILE}" "${BACKUP_BUCKET}/${BACKUP_FILE}"
+                        
+                        # Alternative: Upload to persistent volume
+                        cp "/tmp/${BACKUP_FILE}" "/backups/${BACKUP_FILE}"
+                        
+                        # Cleanup old backups (keep last 30 days)
+                        find /backups -name "backup_*.dump" -mtime +30 -delete
+                        
+                        echo "Backup completed: ${BACKUP_FILE}"
+                      volumeMounts:
+                      - name: backup-storage
+                        mountPath: /backups
+                    volumes:
+                    - name: backup-storage
+                      persistentVolumeClaim:
+                        claimName: backup-pvc
+          ---
+          apiVersion: v1
+          kind: PersistentVolumeClaim
+          metadata:
+            name: backup-pvc
+            namespace: swagger2mcp
+          spec:
+            accessModes:
+            - ReadWriteOnce
+            resources:
+              requests:
+                storage: 20Gi
+            storageClassName: standard
+          EOF
+          
+          echo "✓ Created k8s/backup-examples/postgres-backup-cronjob.yaml"
+
+      - name: Create Docker backup script example
+        run: |
+          mkdir -p scripts/backup
+          
+          cat > scripts/backup/docker-backup.sh << 'EOF'
+          #!/bin/bash
+          set -e
+
+          # Docker-based backup script for Swagger2MCP
+          # Usage: ./docker-backup.sh [backup_directory]
+
+          BACKUP_DIR="${1:-./backups}"
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          BACKUP_NAME="swagger2mcp_backup_${TIMESTAMP}"
+
+          echo "Starting backup: ${BACKUP_NAME}"
+
+          # Create backup directory
+          mkdir -p "${BACKUP_DIR}/${BACKUP_NAME}"
+
+          # Backup database
+          echo "Backing up database..."
+          docker exec swagger2mcp-postgres-1 pg_dump -U postgres swagger2mcp -F c -b > "${BACKUP_DIR}/${BACKUP_NAME}/database.dump"
+
+          # Backup uploaded files
+          echo "Backing up uploaded files..."
+          docker cp swagger2mcp-backend-1:/app/uploads "${BACKUP_DIR}/${BACKUP_NAME}/uploads"
+
+          # Backup configuration (without secrets)
+          echo "Backing up configuration..."
+          cp docker-compose.yml "${BACKUP_DIR}/${BACKUP_NAME}/"
+          cp -r k8s "${BACKUP_DIR}/${BACKUP_NAME}/" 2>/dev/null || true
+
+          # Create archive
+          echo "Creating archive..."
+          cd "${BACKUP_DIR}"
+          tar -czf "${BACKUP_NAME}.tar.gz" "${BACKUP_NAME}"
+          rm -rf "${BACKUP_NAME}"
+
+          echo "✓ Backup completed: ${BACKUP_DIR}/${BACKUP_NAME}.tar.gz"
+          echo "Size: $(du -h ${BACKUP_NAME}.tar.gz | cut -f1)"
+
+          # Cleanup old backups (keep last 7)
+          ls -t swagger2mcp_backup_*.tar.gz 2>/dev/null | tail -n +8 | xargs -r rm
+          echo "✓ Cleaned up old backups"
+          EOF
+          
+          chmod +x scripts/backup/docker-backup.sh
+          echo "✓ Created scripts/backup/docker-backup.sh"
+
+      - name: Create restore script example
+        run: |
+          cat > scripts/backup/docker-restore.sh << 'EOF'
+          #!/bin/bash
+          set -e
+
+          # Docker-based restore script for Swagger2MCP
+          # Usage: ./docker-restore.sh <backup_file>
+
+          if [ -z "$1" ]; then
+            echo "Usage: $0 <backup_file.tar.gz>"
+            exit 1
+          fi
+
+          BACKUP_FILE="$1"
+          TEMP_DIR="/tmp/swagger2mcp_restore_$$"
+
+          if [ ! -f "$BACKUP_FILE" ]; then
+            echo "Error: Backup file not found: $BACKUP_FILE"
+            exit 1
+          fi
+
+          echo "⚠️  WARNING: This will restore data and may overwrite existing data!"
+          echo "Backup file: $BACKUP_FILE"
+          read -p "Continue? (yes/no): " confirm
+
+          if [ "$confirm" != "yes" ]; then
+            echo "Restore cancelled"
+            exit 0
+          fi
+
+          # Extract backup
+          echo "Extracting backup..."
+          mkdir -p "$TEMP_DIR"
+          tar -xzf "$BACKUP_FILE" -C "$TEMP_DIR"
+
+          # Find the backup directory
+          BACKUP_DIR=$(find "$TEMP_DIR" -maxdepth 1 -type d -name "swagger2mcp_backup_*" | head -n 1)
+
+          if [ -z "$BACKUP_DIR" ]; then
+            echo "Error: Invalid backup file"
+            rm -rf "$TEMP_DIR"
+            exit 1
+          fi
+
+          # Restore database
+          if [ -f "$BACKUP_DIR/database.dump" ]; then
+            echo "Restoring database..."
+            
+            # Stop application to prevent writes
+            docker compose stop backend worker
+            
+            # Restore database
+            cat "$BACKUP_DIR/database.dump" | docker exec -i swagger2mcp-postgres-1 pg_restore -U postgres -d swagger2mcp -c
+            
+            echo "✓ Database restored"
+          fi
+
+          # Restore uploaded files
+          if [ -d "$BACKUP_DIR/uploads" ]; then
+            echo "Restoring uploaded files..."
+            docker cp "$BACKUP_DIR/uploads" swagger2mcp-backend-1:/app/
+            echo "✓ Uploaded files restored"
+          fi
+
+          # Cleanup
+          rm -rf "$TEMP_DIR"
+
+          # Restart application
+          echo "Restarting services..."
+          docker compose up -d
+
+          echo "✓ Restore completed successfully"
+          echo "Please verify application health at http://localhost:3000/health"
+          EOF
+          
+          chmod +x scripts/backup/docker-restore.sh
+          echo "✓ Created scripts/backup/docker-restore.sh"
+
+      - name: Upload backup examples
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-examples
+          path: |
+            k8s/backup-examples/
+            scripts/backup/
+          retention-days: 90
+
+  test-backup-procedures:
+    name: Test Backup Procedures
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Start test environment
+        run: |
+          docker compose up -d postgres
+          echo "Waiting for PostgreSQL..."
+          sleep 10
+
+      - name: Create test data
+        run: |
+          docker exec swagger2mcp-postgres-1 psql -U postgres -c "CREATE DATABASE test_backup;"
+          docker exec swagger2mcp-postgres-1 psql -U postgres -d test_backup -c "CREATE TABLE test (id SERIAL PRIMARY KEY, data TEXT);"
+          docker exec swagger2mcp-postgres-1 psql -U postgres -d test_backup -c "INSERT INTO test (data) VALUES ('backup test data');"
+
+      - name: Test backup creation
+        run: |
+          echo "Creating test backup..."
+          docker exec swagger2mcp-postgres-1 pg_dump -U postgres test_backup -F c -b > test_backup.dump
+          
+          if [ -f test_backup.dump ]; then
+            size=$(stat -f%z test_backup.dump 2>/dev/null || stat -c%s test_backup.dump)
+            echo "✓ Backup created successfully (${size} bytes)"
+          else
+            echo "::error::Backup creation failed"
+            exit 1
+          fi
+
+      - name: Test backup restore
+        run: |
+          echo "Testing backup restore..."
+          
+          # Drop and recreate database
+          docker exec swagger2mcp-postgres-1 psql -U postgres -c "DROP DATABASE test_backup;"
+          docker exec swagger2mcp-postgres-1 psql -U postgres -c "CREATE DATABASE test_backup;"
+          
+          # Restore from backup
+          cat test_backup.dump | docker exec -i swagger2mcp-postgres-1 pg_restore -U postgres -d test_backup
+          
+          # Verify restored data
+          result=$(docker exec swagger2mcp-postgres-1 psql -U postgres -d test_backup -t -c "SELECT data FROM test LIMIT 1;")
+          
+          if echo "$result" | grep -q "backup test data"; then
+            echo "✓ Backup restore verified successfully"
+          else
+            echo "::error::Backup restore verification failed"
+            exit 1
+          fi
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -f test_backup.dump
+          docker compose down -v

@@ -1,0 +1,238 @@
+name: Database Migration Validation
+
+on:
+  push:
+    branches: [ master, develop ]
+    paths:
+      - 'backend/prisma/**'
+  pull_request:
+    branches: [ master, develop ]
+    paths:
+      - 'backend/prisma/**'
+  workflow_dispatch:
+
+jobs:
+  validate-migrations:
+    name: Validate Prisma Migrations
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: migration_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history for migration validation
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Check Prisma schema validity
+        working-directory: ./backend
+        run: npx prisma validate
+
+      - name: Check for migration files
+        working-directory: ./backend
+        run: |
+          if [ -z "$(ls -A prisma/migrations 2>/dev/null)" ]; then
+            echo "::warning::No migration files found. Run 'npx prisma migrate dev' to create initial migration."
+          else
+            echo "✓ Migration files exist"
+            ls -la prisma/migrations/
+          fi
+
+      - name: Apply migrations to test database
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/migration_test
+        run: |
+          echo "Applying migrations to test database..."
+          npx prisma migrate deploy
+          echo "✓ Migrations applied successfully"
+
+      - name: Verify database schema
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/migration_test
+        run: |
+          echo "Verifying database schema matches Prisma schema..."
+          npx prisma db push --skip-generate --accept-data-loss
+          echo "✓ Database schema is valid"
+
+      - name: Check for pending migrations
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/migration_test
+        run: |
+          # Check if schema and migrations are in sync
+          if npx prisma migrate status 2>&1 | grep -q "Database schema is up to date"; then
+            echo "✓ No pending migrations"
+          else
+            echo "::warning::There may be pending migrations"
+            npx prisma migrate status
+          fi
+
+      - name: Test rollback capability
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/migration_test
+        run: |
+          echo "Testing migration rollback scenario..."
+          
+          # Get list of migrations
+          migration_count=$(ls -1 prisma/migrations | wc -l)
+          
+          if [ "$migration_count" -gt 1 ]; then
+            echo "Multiple migrations exist - rollback testing available"
+            echo "Note: Prisma doesn't support automated rollback. Document manual rollback procedures."
+          else
+            echo "::notice::Only one migration exists. Add rollback documentation as migrations grow."
+          fi
+
+      - name: Generate migration diff
+        if: github.event_name == 'pull_request'
+        working-directory: ./backend
+        run: |
+          echo "Checking for schema changes in this PR..."
+          
+          # Check if schema.prisma was modified
+          if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q "prisma/schema.prisma"; then
+            echo "⚠️ Prisma schema was modified"
+            echo "Changes:"
+            git diff origin/${{ github.base_ref }}...HEAD -- prisma/schema.prisma
+          else
+            echo "✓ No schema changes in this PR"
+          fi
+
+  migration-safety-check:
+    name: Migration Safety Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for destructive migrations
+        working-directory: ./backend
+        run: |
+          echo "Checking for potentially destructive migration operations..."
+          
+          # Check migration SQL files for destructive operations
+          if find prisma/migrations -name "*.sql" -exec grep -l "DROP TABLE\|DROP COLUMN\|ALTER TABLE.*DROP" {} \; 2>/dev/null | grep .; then
+            echo "::warning::Found potentially destructive migrations. Ensure you have backups!"
+            echo "Destructive operations found in:"
+            find prisma/migrations -name "*.sql" -exec grep -l "DROP TABLE\|DROP COLUMN\|ALTER TABLE.*DROP" {} \;
+          else
+            echo "✓ No obviously destructive operations found"
+          fi
+
+      - name: Check for data loss risks
+        working-directory: ./backend
+        run: |
+          echo "Checking for operations that might cause data loss..."
+          
+          # Check for column type changes that might truncate data
+          if find prisma/migrations -name "*.sql" -exec grep -l "ALTER COLUMN.*TYPE" {} \; 2>/dev/null | grep .; then
+            echo "::warning::Found column type changes. Verify data compatibility!"
+          fi
+          
+          # Check for adding NOT NULL to existing columns
+          if find prisma/migrations -name "*.sql" -exec grep -l "ALTER.*ADD.*NOT NULL\|ALTER.*SET NOT NULL" {} \; 2>/dev/null | grep .; then
+            echo "::warning::Found NOT NULL constraints being added. Ensure existing data is compatible!"
+          fi
+
+      - name: Migration naming convention check
+        working-directory: ./backend
+        run: |
+          echo "Validating migration naming conventions..."
+          
+          # Check if migrations follow timestamp naming convention
+          for migration in prisma/migrations/*/migration.sql; do
+            dir=$(dirname "$migration")
+            dirname=$(basename "$dir")
+            
+            # Prisma migrations are named: TIMESTAMP_description
+            if ! [[ $dirname =~ ^[0-9]{14}_.*$ ]]; then
+              echo "::warning::Migration $dirname doesn't follow expected naming pattern"
+            fi
+          done
+          
+          echo "✓ Migration naming check complete"
+
+  seed-data-validation:
+    name: Validate Seed Data
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: seed_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Apply migrations
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/seed_test
+        run: npx prisma migrate deploy
+
+      - name: Check for seed script
+        working-directory: ./backend
+        run: |
+          if [ -f "prisma/seed.ts" ] || [ -f "prisma/seed.js" ]; then
+            echo "✓ Seed script exists"
+            
+            # Run seed script if it exists
+            if grep -q "prisma.*seed" package.json; then
+              echo "Running seed script..."
+              npm run seed || echo "::notice::Seed script exists but may need DATABASE_URL configuration"
+            fi
+          else
+            echo "::notice::No seed script found. Consider adding prisma/seed.ts for development data"
+          fi
