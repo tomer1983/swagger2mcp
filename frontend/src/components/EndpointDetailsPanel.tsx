@@ -49,7 +49,7 @@ export const EndpointDetailsPanel: React.FC<EndpointDetailsPanelProps> = ({ endp
     const headerParams = endpoint.parameters?.filter(p => p.in === 'header') || [];
 
     return (
-        <div className="fixed right-0 top-0 h-full w-[400px] bg-background/95 backdrop-blur-xl border-l border-border shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-300">
+        <div className="fixed right-0 top-0 h-full w-[400px] bg-background border-l border-border shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-300">
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-border">
                 <h2 className="font-semibold text-foreground flex items-center gap-2">
