@@ -22,4 +22,3 @@ __mocks__
 .editorconfig
 .eslintrc*
 .prettierrc*
-tsconfig.json

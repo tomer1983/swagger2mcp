@@ -1,0 +1,51 @@
+{{- if and .Values.ingress.enabled (eq .Values.global.platform "openshift") }}
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ include "swagger2mcp.fullname" . }}-backend
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "swagger2mcp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  host: {{ .Values.ingress.host }}
+  path: /api
+  to:
+    kind: Service
+    name: {{ include "swagger2mcp.fullname" . }}-backend
+    weight: 100
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ include "swagger2mcp.fullname" . }}-frontend
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "swagger2mcp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  host: {{ .Values.ingress.host }}
+  path: /
+  to:
+    kind: Service
+    name: {{ include "swagger2mcp.fullname" . }}-frontend
+    weight: 100
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+{{- end }}

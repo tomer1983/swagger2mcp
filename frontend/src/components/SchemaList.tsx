@@ -9,6 +9,12 @@ import { SchemaEditor } from './SchemaEditor';
 import { Button } from './ui/button';
 import { useToast } from './ui/toast';
 import { ListSkeleton } from './ui/skeleton';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from './ui/dropdown-menu';
 
 interface Schema {
     id: string;
@@ -503,25 +509,28 @@ export const SchemaList = ({ refresh, onVisualize }: { refresh: number, onVisual
 
                                 {/* Export actions group */}
                                 <div className="flex items-center gap-2 flex-wrap">
-                                    <Button
-                                        onClick={() => setShowExportModal({ schemaId: schema.id, target: 'github' })}
-                                        variant="secondary"
-                                        size="sm"
-                                        className="whitespace-nowrap"
-                                    >
-                                        <Github className="h-4 w-4" aria-hidden="true" />
-                                        GitHub
-                                    </Button>
-
-                                    <Button
-                                        onClick={() => setShowExportModal({ schemaId: schema.id, target: 'gitlab' })}
-                                        variant="secondary"
-                                        size="sm"
-                                        className="whitespace-nowrap bg-orange-600 hover:bg-orange-700"
-                                    >
-                                        <GitlabIcon className="h-4 w-4" aria-hidden="true" />
-                                        GitLab
-                                    </Button>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button
+                                                variant="secondary"
+                                                size="sm"
+                                                className="whitespace-nowrap"
+                                            >
+                                                <FileUp className="h-4 w-4 mr-2" />
+                                                Export
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={() => setShowExportModal({ schemaId: schema.id, target: 'github' })}>
+                                                <Github className="h-4 w-4 mr-2" />
+                                                Export to GitHub
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => setShowExportModal({ schemaId: schema.id, target: 'gitlab' })}>
+                                                <GitlabIcon className="h-4 w-4 mr-2 text-orange-600" />
+                                                Export to GitLab
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </div>
                             </div>
                         </div>

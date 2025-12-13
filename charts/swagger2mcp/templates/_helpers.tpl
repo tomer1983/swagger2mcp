@@ -47,3 +47,17 @@ Selector labels
 app.kubernetes.io/name: {{ include "swagger2mcp.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
+
+{{/*
+Construct full image name
+*/}}
+{{- define "swagger2mcp.image" -}}
+{{- $repository := .image.repository | default .root.Values.global.repository -}}
+{{- $name := .image.name -}}
+{{- $tag := .image.tag | default .root.Chart.AppVersion -}}
+{{- if $repository -}}
+{{- printf "%s/%s:%s" $repository $name $tag -}}
+{{- else -}}
+{{- printf "%s:%s" $name $tag -}}
+{{- end -}}
+{{- end }}
