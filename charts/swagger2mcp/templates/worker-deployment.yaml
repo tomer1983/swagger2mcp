@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: worker
-          image: "{{ .Values.worker.image.repository }}:{{ .Values.worker.image.tag }}"
+          image: {{ include "swagger2mcp.image" (dict "root" . "image" .Values.worker.image) | quote }}
           imagePullPolicy: {{ .Values.worker.image.pullPolicy }}
           command: ["npm", "run", "worker"]
           envFrom:

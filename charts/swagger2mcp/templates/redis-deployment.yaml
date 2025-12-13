@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: redis
-          image: "{{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag }}"
+          image: {{ include "swagger2mcp.image" (dict "root" . "image" .Values.redis.image) | quote }}
           ports:
             - containerPort: {{ .Values.redis.service.port }}
               name: redis

@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: postgres
-          image: "{{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}"
+          image: {{ include "swagger2mcp.image" (dict "root" . "image" .Values.postgres.image) | quote }}
           ports:
             - containerPort: {{ .Values.postgres.service.port }}
               name: postgres
@@ -30,17 +30,17 @@ spec:
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "swagger2mcp.fullname" . }}-secrets
+                  name: {{ .Values.postgres.existingSecret | default (printf "%s-secrets" (include "swagger2mcp.fullname" .)) }}
                   key: POSTGRES_USER
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "swagger2mcp.fullname" . }}-secrets
+                  name: {{ .Values.postgres.existingSecret | default (printf "%s-secrets" (include "swagger2mcp.fullname" .)) }}
                   key: POSTGRES_PASSWORD
             - name: POSTGRES_DB
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "swagger2mcp.fullname" . }}-secrets
+                  name: {{ .Values.postgres.existingSecret | default (printf "%s-secrets" (include "swagger2mcp.fullname" .)) }}
                   key: POSTGRES_DB
           resources:
             {{- toYaml .Values.postgres.resources | nindent 12 }}
@@ -60,6 +60,9 @@ spec:
         name: postgres-data
       spec:
         accessModes: ["ReadWriteOnce"]
+        {{- if or .Values.global.storageClass .Values.postgres.persistence.storageClass }}
+        storageClassName: {{ .Values.postgres.persistence.storageClass | default .Values.global.storageClass | quote }}
+        {{- end }}
         resources:
           requests:
             storage: {{ .Values.postgres.persistence.size }}
