@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LoginForm } from '../components/LoginForm';
-import { RegisterForm } from '../components/RegisterForm';
+// import { RegisterForm } from '../components/RegisterForm';
 
 export const LoginPage: React.FC = () => {
-    const [isLogin, setIsLogin] = useState(true);
     const navigate = useNavigate();
+    // const [isLogin, setIsLogin] = useState(true); // Public registration disabled
 
     const handleSuccess = () => {
         navigate('/');
@@ -13,17 +13,11 @@ export const LoginPage: React.FC = () => {
 
     return (
         <div className="min-h-[80vh] flex items-center justify-center px-4">
-            {isLogin ? (
-                <LoginForm
-                    onSuccess={handleSuccess}
-                    onSwitchToRegister={() => setIsLogin(false)}
-                />
-            ) : (
-                <RegisterForm
-                    onSuccess={handleSuccess}
-                    onSwitchToLogin={() => setIsLogin(true)}
-                />
-            )}
+            <LoginForm
+                onSuccess={handleSuccess}
+                onSwitchToRegister={() => { /* Disabled */ }}
+                hideRegisterLink={true}
+            />
         </div>
     );
 };

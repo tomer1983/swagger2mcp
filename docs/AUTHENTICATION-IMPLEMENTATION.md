@@ -6,7 +6,7 @@
 
 Successfully implemented a comprehensive authentication and authorization system for Swagger2MCP with the following features:
 
-## ✅ Completed Components
+## ✅ Completed Components 
 
 ### 1. Database Schema (Prisma)
 - **User Model**: Added with fields for local and OAuth authentication

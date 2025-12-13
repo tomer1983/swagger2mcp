@@ -32,9 +32,10 @@ import { Separator } from './ui/separator';
 interface NavLinksProps {
   currentPath: string;
   isAdmin: boolean;
+  isAuthenticated: boolean;
 }
 
-const NavLinks: React.FC<NavLinksProps> = ({ currentPath, isAdmin }) => {
+const NavLinks: React.FC<NavLinksProps> = ({ currentPath, isAdmin, isAuthenticated }) => {
   const isActive = (path: string) => {
     return currentPath === path || currentPath.startsWith(path + '/');
   };
@@ -52,22 +53,26 @@ const NavLinks: React.FC<NavLinksProps> = ({ currentPath, isAdmin }) => {
         <Home className="w-4 h-4" />
         <span>Home</span>
       </Link>
-      <Link to="/generate" className={navLinkClass('/generate')}>
-        <FileUp className="w-4 h-4" />
-        <span>Generate</span>
-      </Link>
-      <Link to="/schemas" className={navLinkClass('/schemas')}>
-        <Database className="w-4 h-4" />
-        <span>Schemas</span>
-      </Link>
-      <Link to="/settings" className={navLinkClass('/settings')}>
-        <Settings className="w-4 h-4" />
-        <span>Settings</span>
-      </Link>
-      <Link to="/jobs" className={navLinkClass('/jobs')}>
-        <Briefcase className="w-4 h-4" />
-        <span>Jobs</span>
-      </Link>
+      {isAuthenticated && (
+        <>
+          <Link to="/generate" className={navLinkClass('/generate')}>
+            <FileUp className="w-4 h-4" />
+            <span>Generate</span>
+          </Link>
+          <Link to="/schemas" className={navLinkClass('/schemas')}>
+            <Database className="w-4 h-4" />
+            <span>Schemas</span>
+          </Link>
+          <Link to="/settings" className={navLinkClass('/settings')}>
+            <Settings className="w-4 h-4" />
+            <span>Settings</span>
+          </Link>
+          <Link to="/jobs" className={navLinkClass('/jobs')}>
+            <Briefcase className="w-4 h-4" />
+            <span>Jobs</span>
+          </Link>
+        </>
+      )}
       {isAdmin && (
         <Link to="/admin" className={navLinkClass('/admin')}>
           <Shield className="w-4 h-4" />
@@ -98,7 +103,7 @@ export const Navbar: React.FC = () => {
 
         {/* Desktop nav */}
         <div className="hidden md:flex md:items-center md:gap-1">
-          <NavLinks currentPath={location.pathname} isAdmin={isAdmin} />
+          <NavLinks currentPath={location.pathname} isAdmin={isAdmin} isAuthenticated={!!user} />
         </div>
 
         <div className="flex flex-1 items-center justify-end gap-2">
@@ -157,7 +162,7 @@ export const Navbar: React.FC = () => {
                 </Link>
                 <Separator />
                 <nav className="flex flex-col gap-2">
-                  <NavLinks currentPath={location.pathname} isAdmin={isAdmin} />
+                  <NavLinks currentPath={location.pathname} isAdmin={isAdmin} isAuthenticated={!!user} />
                 </nav>
               </div>
             </SheetContent>
