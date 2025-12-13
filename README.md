@@ -9,7 +9,7 @@
 
 **Transform OpenAPI/Swagger specifications into [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) servers instantly.**
 
-> 🚀 **Swagger2MCP** is a powerful tool ensuring LLMs can securely and accurately interact with your APIs. Upload a schema or crawl a documentation site, and get a fully functional, type-safe MCP server in seconds.
+> 🚀 **Swagger2MCP** is a powerful tool ensuring LLMs can securely and accurately interact with your APIs. Upload a schema or crawl a documentation site, and get a fully functional, type-safe MCP server.
 
 ![Swagger2MCP Home Dashboard](./docs/assets/screenshot-home.png)
 
@@ -42,6 +42,21 @@ docker-compose up
 ```
 
 Visit the application at **[http://localhost:5173](http://localhost:5173)**.
+
+## 🔒 Production Deployment Checklist
+
+Before deploying to production, ensure you complete the following critical security steps:
+
+- ✅ **Change JWT_SECRET** - Generate a strong, unique secret key for JWT token signing
+- ✅ **Set strong passwords** - Use complex passwords for all database and service accounts
+- ✅ **Configure CORS** - Restrict CORS to only trusted domains in production
+- ✅ **Enable HTTPS** - Always use SSL/TLS certificates for encrypted communication
+- ✅ **Review environment variables** - Ensure all `.env` values are production-ready
+- ✅ **Update default credentials** - Change all default usernames and passwords
+- ✅ **Enable security headers** - Configure appropriate HTTP security headers
+- ✅ **Set up monitoring** - Implement logging and monitoring solutions
+
+See [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) for detailed deployment instructions.
 
 ## 📸 Screenshots
 
