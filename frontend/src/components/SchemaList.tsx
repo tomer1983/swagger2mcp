@@ -564,7 +564,7 @@ export const SchemaList = ({ refresh, onVisualize }: { refresh: number, onVisual
                     aria-modal="true"
                     aria-labelledby="export-modal-title"
                 >
-                    <div className="bg-popover/95 backdrop-blur-xl border border-border/50 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl animate-in fade-in zoom-in duration-200">
+                    <div className="bg-card border border-border rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl animate-in fade-in zoom-in duration-200">
                         <h3 id="export-modal-title" className="text-xl font-bold text-popover-foreground mb-5 flex items-center gap-3">
                             {showExportModal.target === 'github' ? (
                                 <>
