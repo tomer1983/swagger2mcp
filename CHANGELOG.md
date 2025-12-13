@@ -1,3 +1,22 @@
+# [1.2.0](https://github.com/tomer1983/swagger2mcp/compare/v1.1.0...v1.2.0) (2025-12-13)
+
+
+### Bug Fixes
+
+* **docker:** include tsconfig.json in backend build context ([dea5fed](https://github.com/tomer1983/swagger2mcp/commit/dea5fedc52428e38d74a0bb89937100dc3c6282d))
+* make modal backgrounds opaque for better visibility ([6b51a10](https://github.com/tomer1983/swagger2mcp/commit/6b51a102c7859b77739dae38844e16a6a94bc54a))
+* **ui:** hide protected navigation links for unauthenticated users ([3f8a8eb](https://github.com/tomer1983/swagger2mcp/commit/3f8a8eb234c31003e7bef1332bc1f64a02ddb4b4))
+
+
+### Features
+
+* add GitHub Actions workflow for environment file validation and secret exposure checks ([fba684c](https://github.com/tomer1983/swagger2mcp/commit/fba684cc41a09a161478e11a9d38838e60e83529))
+* add SchemaList component to display, generate, export, and edit schemas, including GitHub/GitLab integration and configuration management. ([f0d06a5](https://github.com/tomer1983/swagger2mcp/commit/f0d06a5ba9859cb9d0dda9a808a8845651c3b507))
+* disable public registration and enforce permissions on feature routes ([df21588](https://github.com/tomer1983/swagger2mcp/commit/df2158883140d2c960961d902c6509c2131ac9bd))
+* **helm:** add Kubernetes and OpenShift platform compatibility ([9094992](https://github.com/tomer1983/swagger2mcp/commit/9094992015a492e54571bcad0644eb3747ed3f5f))
+* **helm:** refactor image config, add global repo, and enhance persistence support ([b7c31d7](https://github.com/tomer1983/swagger2mcp/commit/b7c31d79b82248568afcb49936143ae6a9feea9a))
+* update release workflow to use semantic-release with manual trigger ([acd26c8](https://github.com/tomer1983/swagger2mcp/commit/acd26c869ffcd3b99a32e4071cdc89e9b6500fd6))
+
 # [1.2.0-develop.1](https://github.com/tomer1983/swagger2mcp/compare/v1.1.0...v1.2.0-develop.1) (2025-12-13)
 
 
