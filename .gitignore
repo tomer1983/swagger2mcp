@@ -2,9 +2,34 @@ node_modules/
 dist/
 .env
 .env.local
+.env.production
+.env.*.local
 *.log
 .DS_Store
 uploads/
 *.zip
 .vscode/
 .idea/
+
+# Backup files
+*.backup
+*.dump
+backups/
+
+# SSL/TLS certificates
+*.pem
+*.key
+*.crt
+*.csr
+ssl/
+certs/
+
+# Monitoring data
+prometheus_data/
+grafana_data/
+loki_data/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
