@@ -7,9 +7,10 @@ import { getMicrosoftAuthUrl, getSessionId } from '../lib/api';
 interface LoginFormProps {
     onSuccess?: () => void;
     onSwitchToRegister?: () => void;
+    hideRegisterLink?: boolean;
 }
 
-export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegister }) => {
+export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegister, hideRegisterLink }) => {
     const { login } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -22,8 +23,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegis
         setLoading(true);
 
         try {
-            await login({ 
-                email, 
+            await login({
+                email,
                 password,
                 sessionId: getSessionId() // Migrate anonymous data to user account
             });
@@ -43,7 +44,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegis
         <div className="w-full max-w-md mx-auto p-8 bg-card/50 backdrop-blur-sm rounded-2xl border border-border/50 shadow-xl">
             <h2 className="text-2xl font-bold mb-2 text-center text-foreground">Welcome Back</h2>
             <p className="text-muted-foreground text-center mb-6">Sign in to your account to continue</p>
-            
+
             <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
                     <label className="block text-sm font-medium mb-1.5 text-foreground">Email</label>
@@ -85,31 +86,33 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegis
 
             <div className="mt-6 pt-6 border-t border-border/50">
                 <p className="text-center text-sm text-muted-foreground mb-3">Or continue with</p>
-                <Button 
-                    variant="outline" 
+                <Button
+                    variant="outline"
                     className="w-full"
                     onClick={handleMicrosoftLogin}
                     disabled={loading}
                 >
                     <svg className="w-5 h-5 mr-2" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="1" y="1" width="10" height="10" fill="#F25022"/>
-                        <rect x="12" y="1" width="10" height="10" fill="#7FBA00"/>
-                        <rect x="1" y="12" width="10" height="10" fill="#00A4EF"/>
-                        <rect x="12" y="12" width="10" height="10" fill="#FFB900"/>
+                        <rect x="1" y="1" width="10" height="10" fill="#F25022" />
+                        <rect x="12" y="1" width="10" height="10" fill="#7FBA00" />
+                        <rect x="1" y="12" width="10" height="10" fill="#00A4EF" />
+                        <rect x="12" y="12" width="10" height="10" fill="#FFB900" />
                     </svg>
                     Microsoft Account
                 </Button>
             </div>
 
-            <div className="mt-6 text-center">
-                <button
-                    type="button"
-                    onClick={onSwitchToRegister}
-                    className="text-sm text-primary hover:text-primary/80 transition-colors"
-                >
-                    Don't have an account? <span className="font-medium">Sign up</span>
-                </button>
-            </div>
+            {!hideRegisterLink && (
+                <div className="mt-6 text-center">
+                    <button
+                        type="button"
+                        onClick={onSwitchToRegister}
+                        className="text-sm text-primary hover:text-primary/80 transition-colors"
+                    >
+                        Don't have an account? <span className="font-medium">Sign up</span>
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

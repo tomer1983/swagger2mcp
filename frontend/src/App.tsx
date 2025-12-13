@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { HomePage } from './pages/HomePage';
@@ -22,14 +22,19 @@ function App() {
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />
-          <Route path="generate" element={<GeneratePage />} />
-          <Route path="schemas" element={<SchemasPage />} />
-          <Route path="jobs" element={<JobsPage />} />
-          <Route path="settings" element={<SettingsPage />} />
-          <Route path="profile" element={<UserProfile />} />
+          {/* Public Routes */}
           <Route path="login" element={<LoginPage />} />
 
-          {/* Admin Routes - Protected */}
+          {/* Protected Feature Routes (Accessible to ALL authenticated users) */}
+          <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>
+            <Route path="generate" element={<GeneratePage />} />
+            <Route path="schemas" element={<SchemasPage />} />
+            <Route path="jobs" element={<JobsPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+            <Route path="profile" element={<UserProfile />} />
+          </Route>
+
+          {/* Admin Routes - Protected (Admin only) */}
           <Route
             path="admin"
             element={
