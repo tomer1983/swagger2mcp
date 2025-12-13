@@ -10,39 +10,40 @@ const router = Router();
  * POST /api/auth/register
  * Register a new user with email and password
  */
-router.post('/register', asyncHandler(async (req: Request, res: Response) => {
-    const { email, password, username } = req.body;
-
-    if (!email || !password) {
-        return res.status(400).json({ error: 'Email and password are required' });
-    }
-
-    if (password.length < 8) {
-        return res.status(400).json({ error: 'Password must be at least 8 characters long' });
-    }
-
-    try {
-        const user = await AuthService.createLocalUser(email, password, username);
-        const token = AuthService.generateToken(user.id, user.email, user.username || undefined);
-
-        res.status(201).json({
-            message: 'User registered successfully',
-            token,
-            user: {
-                id: user.id,
-                email: user.email,
-                username: user.username,
-                displayName: user.displayName,
-                provider: user.provider,
-            },
-        });
-    } catch (error: any) {
-        if (error.message.includes('already exists') || error.message.includes('already taken')) {
-            return res.status(409).json({ error: error.message });
-        }
-        throw error;
-    }
-}));
+// Public registration disabled - users must be created by admin
+// router.post('/register', asyncHandler(async (req: Request, res: Response) => {
+//     const { email, password, username } = req.body;
+//
+//     if (!email || !password) {
+//         return res.status(400).json({ error: 'Email and password are required' });
+//     }
+//
+//     if (password.length < 8) {
+//         return res.status(400).json({ error: 'Password must be at least 8 characters long' });
+//     }
+//
+//     try {
+//         const user = await AuthService.createLocalUser(email, password, username);
+//         const token = AuthService.generateToken(user.id, user.email, user.username || undefined);
+//
+//         res.status(201).json({
+//             message: 'User registered successfully',
+//             token,
+//             user: {
+//                 id: user.id,
+//                 email: user.email,
+//                 username: user.username,
+//                 displayName: user.displayName,
+//                 provider: user.provider,
+//             },
+//         });
+//     } catch (error: any) {
+//         if (error.message.includes('already exists') || error.message.includes('already taken')) {
+//             return res.status(409).json({ error: error.message });
+//         }
+//         throw error;
+//     }
+// }));
 
 /**
  * POST /api/auth/login
@@ -128,9 +129,9 @@ router.get('/microsoft/callback', (req: Request, res: Response, next) => {
  */
 router.get('/me', requireAuth, asyncHandler(async (req: Request, res: Response) => {
     const authReq = req as AuthenticatedRequest;
-    
+
     const user = await AuthService.getUserById(authReq.authUser!.id);
-    
+
     if (!user) {
         return res.status(404).json({ error: 'User not found' });
     }
@@ -152,9 +153,9 @@ router.post('/logout', (req: Request, res: Response) => {
  */
 router.post('/verify-token', optionalAuth, (req: Request, res: Response) => {
     const authReq = req as AuthenticatedRequest;
-    
+
     if (authReq.authenticated && authReq.authUser) {
-        res.json({ 
+        res.json({
             valid: true,
             user: authReq.authUser
         });

@@ -1,3 +1,15 @@
+# [1.2.0-develop.1](https://github.com/tomer1983/swagger2mcp/compare/v1.1.0...v1.2.0-develop.1) (2025-12-13)
+
+
+### Bug Fixes
+
+* **ui:** hide protected navigation links for unauthenticated users ([3f8a8eb](https://github.com/tomer1983/swagger2mcp/commit/3f8a8eb234c31003e7bef1332bc1f64a02ddb4b4))
+
+
+### Features
+
+* disable public registration and enforce permissions on feature routes ([df21588](https://github.com/tomer1983/swagger2mcp/commit/df2158883140d2c960961d902c6509c2131ac9bd))
+
 # [1.1.0](https://github.com/tomer1983/swagger2mcp/compare/v1.0.1...v1.1.0) (2025-12-10)
 
 
