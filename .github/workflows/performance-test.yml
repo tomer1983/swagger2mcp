@@ -42,8 +42,8 @@ jobs:
       env:
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
       run: |
-        npx prisma generate
-        npx prisma db push --skip-generate
+        npx prisma generate --schema=backend/prisma/schema.prisma
+        npx prisma db push --skip-generate --schema=backend/prisma/schema.prisma
     
     - name: Run performance tests
       env:
