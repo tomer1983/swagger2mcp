@@ -1,0 +1,205 @@
+name: Environment Validation
+
+on:
+  push:
+    branches: [ master, develop ]
+    paths:
+      - '**.env.example'
+      - 'backend/src/**/*.ts'
+      - 'frontend/src/**/*.ts'
+      - 'frontend/src/**/*.tsx'
+  pull_request:
+    branches: [ master, develop ]
+    paths:
+      - '**.env.example'
+      - 'backend/src/**/*.ts'
+      - 'frontend/src/**/*.ts'
+      - 'frontend/src/**/*.tsx'
+  workflow_dispatch:
+
+jobs:
+  validate-env-files:
+    name: Validate Environment Files
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check backend .env.example exists
+        run: |
+          if [ ! -f backend/.env.example ]; then
+            echo "::error::backend/.env.example is missing"
+            exit 1
+          fi
+          echo "✓ backend/.env.example exists"
+
+      - name: Check frontend .env.example exists
+        run: |
+          if [ ! -f frontend/.env.example ]; then
+            echo "::warning::frontend/.env.example is missing - creating recommendation"
+          else
+            echo "✓ frontend/.env.example exists"
+          fi
+
+      - name: Validate backend environment variables
+        run: |
+          echo "Checking required backend environment variables..."
+          
+          required_vars=(
+            "PORT"
+            "DATABASE_URL"
+            "REDIS_HOST"
+            "REDIS_PORT"
+            "JWT_SECRET"
+            "FRONTEND_URL"
+            "ALLOWED_ORIGINS"
+          )
+          
+          missing_vars=()
+          
+          for var in "${required_vars[@]}"; do
+            if ! grep -q "^$var=" backend/.env.example; then
+              missing_vars+=("$var")
+            else
+              echo "✓ $var is documented"
+            fi
+          done
+          
+          if [ ${#missing_vars[@]} -ne 0 ]; then
+            echo "::error::Missing required variables in backend/.env.example: ${missing_vars[*]}"
+            exit 1
+          fi
+          
+          echo "✓ All required backend environment variables are documented"
+
+      - name: Check for production-unsafe defaults
+        run: |
+          echo "Checking for unsafe default values..."
+          
+          # Check for weak JWT secrets
+          if grep -q "JWT_SECRET=.*secret.*" backend/.env.example && \
+             ! grep -q "change-in-production" backend/.env.example; then
+            echo "::warning::JWT_SECRET in .env.example should indicate it must be changed in production"
+          fi
+          
+          # Check for default passwords
+          if grep -q "POSTGRES_PASSWORD=postgres$" backend/.env.example; then
+            echo "::warning::Default postgres password should have a warning comment"
+          fi
+          
+          echo "✓ Environment file security check complete"
+
+      - name: Validate docker-compose environment
+        run: |
+          echo "Validating docker-compose.yml environment variables..."
+          
+          # Check if sensitive values are hardcoded
+          if grep -q "JWT_SECRET=dev-secret" docker-compose.yml; then
+            echo "::notice::docker-compose.yml uses dev JWT_SECRET - ensure production uses proper secrets management"
+          fi
+          
+          echo "✓ docker-compose.yml validation complete"
+
+  check-secrets-exposure:
+    name: Check for Exposed Secrets
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for .env files in git
+        run: |
+          echo "Checking for accidentally committed .env files..."
+          
+          if git ls-files | grep -E '\.env$|\.env\.local$|\.env\.production$'; then
+            echo "::error::Found .env files in git! These should be in .gitignore"
+            exit 1
+          fi
+          
+          echo "✓ No .env files found in git"
+
+      - name: Check .gitignore coverage
+        run: |
+          echo "Validating .gitignore includes environment files..."
+          
+          required_ignores=(
+            ".env"
+            ".env.local"
+            "*.log"
+          )
+          
+          for pattern in "${required_ignores[@]}"; do
+            if ! grep -q "^$pattern" .gitignore; then
+              echo "::warning::.gitignore should include: $pattern"
+            else
+              echo "✓ $pattern is in .gitignore"
+            fi
+          done
+
+      - name: Scan for hardcoded secrets
+        run: |
+          echo "Scanning for potential hardcoded secrets..."
+          
+          # Check for potential API keys/tokens in code
+          if grep -r -E "api[_-]?key.*=.*['\"][a-zA-Z0-9]{20,}" backend/src frontend/src 2>/dev/null; then
+            echo "::warning::Found potential hardcoded API keys - please review"
+          fi
+          
+          # Check for JWT tokens
+          if grep -r -E "jwt.*=.*['\"]ey[A-Za-z0-9]" backend/src frontend/src 2>/dev/null; then
+            echo "::warning::Found potential hardcoded JWT tokens - please review"
+          fi
+          
+          echo "✓ Secret scanning complete"
+
+  documentation-check:
+    name: Environment Documentation Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for environment documentation
+        run: |
+          echo "Checking for environment variable documentation..."
+          
+          # Check if README mentions environment setup
+          if ! grep -qi "environment" README.md; then
+            echo "::warning::README.md should document environment setup"
+          else
+            echo "✓ README.md mentions environment setup"
+          fi
+          
+          # Check for deployment documentation
+          if [ -f "docs/DEPLOYMENT.md" ] || [ -f "DEPLOYMENT.md" ]; then
+            echo "✓ Deployment documentation exists"
+          else
+            echo "::notice::Consider adding deployment documentation with environment variable setup"
+          fi
+
+      - name: Verify production checklist
+        run: |
+          echo "Looking for production deployment checklist..."
+          
+          checklist_items=(
+            "Change JWT_SECRET"
+            "Set strong passwords"
+            "Configure CORS"
+            "Enable HTTPS"
+          )
+          
+          # Check if any documentation mentions these items
+          found_items=0
+          for item in "${checklist_items[@]}"; do
+            if grep -rq "$item" . --include="*.md" 2>/dev/null; then
+              echo "✓ Documentation mentions: $item"
+              ((found_items++))
+            fi
+          done
+          
+          if [ $found_items -lt 2 ]; then
+            echo "::notice::Consider adding a production deployment checklist"
+          fi

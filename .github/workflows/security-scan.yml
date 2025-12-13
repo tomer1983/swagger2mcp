@@ -1,0 +1,147 @@
+name: Container Security Scan
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master, develop ]
+  schedule:
+    # Run weekly on Mondays at 9 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  scan-backend:
+    name: Scan Backend Image
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build backend image
+        run: docker build -t swagger2mcp-backend:${{ github.sha }} ./backend
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: swagger2mcp-backend:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-backend-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-backend-results.sarif'
+          category: 'trivy-backend'
+
+      - name: Run Trivy vulnerability scanner (table output)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: swagger2mcp-backend:${{ github.sha }}
+          format: 'table'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+
+  scan-frontend:
+    name: Scan Frontend Image
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build frontend image
+        run: docker build -t swagger2mcp-frontend:${{ github.sha }} ./frontend
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: swagger2mcp-frontend:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-frontend-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-frontend-results.sarif'
+          category: 'trivy-frontend'
+
+      - name: Run Trivy vulnerability scanner (table output)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: swagger2mcp-frontend:${{ github.sha }}
+          format: 'table'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+
+  scan-production-images:
+    name: Scan Production Images
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build production backend image
+        run: docker build -f ./backend/Dockerfile.production -t swagger2mcp-backend-prod:${{ github.sha }} ./backend
+
+      - name: Build production frontend image
+        run: docker build -f ./frontend/Dockerfile.production -t swagger2mcp-frontend-prod:${{ github.sha }} ./frontend
+
+      - name: Scan production backend
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: swagger2mcp-backend-prod:${{ github.sha }}
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Scan production frontend
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: swagger2mcp-frontend-prod:${{ github.sha }}
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+
+  dependency-check:
+    name: Dependency Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Audit backend dependencies
+        working-directory: ./backend
+        run: |
+          npm audit --audit-level=high --production || echo "::warning::Backend has vulnerabilities"
+          npm audit --json > backend-audit.json || true
+
+      - name: Audit frontend dependencies
+        working-directory: ./frontend
+        run: |
+          npm audit --audit-level=high --production || echo "::warning::Frontend has vulnerabilities"
+          npm audit --json > frontend-audit.json || true
+
+      - name: Upload audit results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-audit-results
+          path: |
+            backend/backend-audit.json
+            frontend/frontend-audit.json
+          retention-days: 30
