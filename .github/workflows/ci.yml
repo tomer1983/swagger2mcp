@@ -2,11 +2,43 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [ master, develop ]
+    tags: [ 'v*' ]
   pull_request:
-    branches: [ main, master, develop ]
+    branches: [ master, develop ]
 
 jobs:
+  codeql-analysis:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'javascript-typescript' ]
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended,security-and-quality
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+
   lint-and-test:
     runs-on: ubuntu-latest
     
@@ -99,6 +131,8 @@ jobs:
 
   docker-build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     
     steps:
       - name: Checkout code
@@ -107,21 +141,61 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Extract tag name
+        id: get_tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: echo "TAG_NAME=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Login to Docker Hub
+        if: github.repository == 'tomer1983/swagger2mcp' && startsWith(github.ref, 'refs/tags/v')
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Build backend image
       - name: Build backend image
         uses: docker/build-push-action@v5
         with:
           context: ./backend
-          push: false
-          tags: swagger2mcp-backend:latest
+          load: true
+          tags: swagger2mcp-backend:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      # Push backend image to Docker Hub
+      - name: Push backend to Docker Hub
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/swagger2mcp-backend:latest
+            ${{ startsWith(github.ref, 'refs/tags/v') && format('{0}/swagger2mcp-backend:{1}', secrets.DOCKERHUB_USERNAME, steps.get_tag.outputs.TAG_NAME) || '' }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Build frontend image
       - name: Build frontend image
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
-          push: false
-          tags: swagger2mcp-frontend:latest
+          load: true
+          tags: swagger2mcp-frontend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Push frontend image to Docker Hub
+      - name: Push frontend to Docker Hub
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/swagger2mcp-frontend:latest
+            ${{ startsWith(github.ref, 'refs/tags/v') && format('{0}/swagger2mcp-frontend:{1}', secrets.DOCKERHUB_USERNAME, steps.get_tag.outputs.TAG_NAME) || '' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -130,10 +204,108 @@ jobs:
           docker compose config
           echo "Docker Compose configuration is valid"
 
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [docker-build]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Start services with docker-compose
+        run: |
+          docker compose up -d --build
+          echo "Waiting for services to start..."
+
+      - name: Wait for backend to be ready
+        run: |
+          echo "Waiting for backend..."
+          for i in {1..30}; do
+            if curl -s http://localhost:3000/health > /dev/null 2>&1; then
+              echo "Backend is ready!"
+              break
+            fi
+            echo "Attempt $i/30 - waiting..."
+            sleep 5
+          done
+
+      - name: Wait for frontend to be ready
+        run: |
+          echo "Waiting for frontend..."
+          for i in {1..20}; do
+            if curl -s http://localhost:5173 > /dev/null 2>&1; then
+              echo "Frontend is ready!"
+              break
+            fi
+            echo "Attempt $i/20 - waiting..."
+            sleep 3
+          done
+
+      - name: Test backend health endpoint
+        run: |
+          echo "Testing backend health..."
+          curl -f http://localhost:3000/health
+          echo ""
+
+      - name: Test backend API endpoints
+        run: |
+          echo "Testing API endpoints..."
+          # Test root API
+          curl -s http://localhost:3000/api || echo "Root API tested"
+          
+          # Test projects endpoint (should return empty array or list)
+          curl -s http://localhost:3000/api/projects || echo "Projects API tested"
+          
+          # Test jobs endpoint
+          curl -s http://localhost:3000/api/jobs || echo "Jobs API tested"
+
+      - name: Test frontend is serving
+        run: |
+          echo "Testing frontend..."
+          curl -f http://localhost:5173 | head -20
+          echo ""
+          echo "Frontend is serving content!"
+
+      - name: Show service logs on failure
+        if: failure()
+        run: |
+          echo "=== Backend Logs ==="
+          docker compose logs backend --tail=100
+          echo ""
+          echo "=== Frontend Logs ==="
+          docker compose logs frontend --tail=100
+          echo ""
+          echo "=== All Services Status ==="
+          docker compose ps
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose down -v
+          echo "Services stopped and volumes removed"
+
+  helm-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 'latest'
+
+      - name: Lint Helm Chart
+        run: helm lint ./charts/swagger2mcp
+
+      - name: Verify Template Rendering
+        run: helm template ./charts/swagger2mcp --debug
+
   semantic-release:
     runs-on: ubuntu-latest
-    needs: [lint-and-test, docker-build]
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop')
+    needs: [lint-and-test, codeql-analysis]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop')
     permissions:
       contents: write
       issues: write
@@ -144,25 +316,20 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          persist-credentials: false
+          token: ${{ secrets.GH_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      - name: Install semantic-release dependencies
+      - name: Install semantic-release dependencies locally
         run: |
-          npm install -g semantic-release@latest
-          npm install -g @semantic-release/changelog@latest
-          npm install -g @semantic-release/git@latest
-          npm install -g @semantic-release/github@latest
-          npm install -g @semantic-release/commit-analyzer@latest
-          npm install -g @semantic-release/release-notes-generator@latest
+          npm install --no-save semantic-release @semantic-release/changelog @semantic-release/git @semantic-release/github @semantic-release/commit-analyzer @semantic-release/release-notes-generator @semantic-release/npm
 
       - name: Run semantic-release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GIT_AUTHOR_NAME: github-actions[bot]
           GIT_AUTHOR_EMAIL: github-actions[bot]@users.noreply.github.com
           GIT_COMMITTER_NAME: github-actions[bot]

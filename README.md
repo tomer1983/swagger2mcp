@@ -1,5 +1,6 @@
 # Swagger2MCP
 
+[![CI Pipeline](https://github.com/tomer1983/swagger2mcp/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/tomer1983/swagger2mcp/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)](https://www.docker.com/)
@@ -52,8 +53,26 @@ Visit the application at **[http://localhost:5173](http://localhost:5173)**.
 
 - [**Development Guide**](./docs/DEVELOPMENT.md) - Setup for contributors.
 - [**API Documentation**](./docs/API-DOCUMENTATION.md) - REST API reference.
+- [**Kubernetes Deployment**](./docs/kubernetes.md) - Deploy to Kubernetes or use Helm charts.
 - [**Authentication**](./docs/AUTHENTICATION.md) - Security details.
 - [**Testing Guide**](./docs/MANUAL-TESTING-GUIDE.md) - QA procedures.
+
+## ☸️ Kubernetes Deployment
+
+Deploy swagger2mcp to any Kubernetes cluster:
+
+### Using Manifests
+```bash
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/
+```
+
+### Using Helm
+```bash
+helm install swagger2mcp ./charts/swagger2mcp --namespace swagger2mcp --create-namespace
+```
+
+See the [full Kubernetes guide](./docs/kubernetes.md) for detailed instructions.
 
 ## 🏗️ Architecture
 
