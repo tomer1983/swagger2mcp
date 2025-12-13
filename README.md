@@ -56,7 +56,7 @@ Before deploying to production, ensure you complete the following critical secur
 - ✅ **Enable security headers** - Configure appropriate HTTP security headers
 - ✅ **Set up monitoring** - Implement logging and monitoring solutions
 
-See [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) for detailed deployment instructions.
+See [docs/PRODUCTION_DEPLOYMENT_CHECKLIST.md](./docs/PRODUCTION_DEPLOYMENT_CHECKLIST.md) for detailed deployment instructions.
 
 ## 📸 Screenshots
 
