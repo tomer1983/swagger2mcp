@@ -46,7 +46,8 @@
         "passport-microsoft": "^2.1.0",
         "pg": "^8.11.3",
         "uuid": "^13.0.0",
-        "ws": "^8.14.2"
+        "ws": "^8.14.2",
+        "prisma": "^5.22.0"
     },
     "devDependencies": {
         "@types/cheerio": "^1.0.0",
@@ -59,7 +60,6 @@
         "@types/node": "^24.10.2",
         "@types/uuid": "^10.0.0",
         "@types/ws": "^8.5.6",
-        "prisma": "^5.22.0",
         "ts-node-dev": "^2.0.0",
         "typescript": "^5.2.2"
     }
