@@ -85,6 +85,7 @@ router.post('/login', asyncHandler(async (req: Request, res: Response) => {
                 username: user.username,
                 displayName: user.displayName,
                 provider: user.provider,
+                role: user.role,
             },
         });
     })(req, res);
