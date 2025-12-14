@@ -3,12 +3,14 @@ import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
+import { execSync } from 'child_process';
 import passport from './config/passport';
 import apiRouter from './routes/api';
 import authRouter from './routes/auth';
 import adminRouter from './routes/admin';
 import { errorHandler, notFoundHandler, requestIdMiddleware } from './middleware/errorHandler';
 import { configService } from './services/config.service';
+import { userService } from './services/user.service';
 
 dotenv.config();
 
@@ -50,11 +52,32 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 app.listen(port, async () => {
+    // Run database migrations on startup
+    try {
+        console.log('Running database migrations...');
+        execSync('npx prisma migrate deploy', {
+            stdio: 'inherit',
+            env: process.env
+        });
+        console.log('Database migrations completed');
+    } catch (error) {
+        console.error('Failed to run migrations:', error);
+        // Don't exit - migrations may have already been applied
+    }
+
     // Seed default config values
     try {
         await configService.seedDefaults();
     } catch (error) {
         console.error('Failed to seed config defaults:', error);
     }
+
+    // Seed default admin user
+    try {
+        await userService.seedDefaultAdmin();
+    } catch (error) {
+        console.error('Failed to seed admin user:', error);
+    }
+
     console.log(`Server running on port ${port}`);
 });

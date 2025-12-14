@@ -131,3 +131,8 @@ secrets:
   postgresUser: "postgres"
   postgresPassword: "postgres"
   postgresDb: "swagger2mcp"
+  # Default admin user credentials (created on first startup)
+  # IMPORTANT: Change these in production!
+  adminEmail: "admin@swagger2mcp.local"
+  adminUsername: "admin"
+  adminPassword: "changeme123"
