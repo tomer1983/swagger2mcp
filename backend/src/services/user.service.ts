@@ -266,6 +266,70 @@ class UserService {
       data: { passwordHash },
     });
   }
+
+  /**
+   * Seed default admin user on first startup
+   * Credentials are configured via environment variables:
+   * - ADMIN_EMAIL: Admin email (default: admin@swagger2mcp.local)
+   * - ADMIN_PASSWORD: Admin password (default: changeme123)
+   * 
+   * IMPORTANT: Change the default password immediately after first login!
+   */
+  async seedDefaultAdmin(): Promise<void> {
+    try {
+      // Check if any admin user already exists
+      const existingAdmin = await prisma.user.findFirst({
+        where: { role: 'admin' },
+      });
+
+      if (existingAdmin) {
+        console.log('Admin user already exists, skipping seed');
+        return;
+      }
+
+      // Get credentials from environment or use defaults
+      const adminEmail = process.env.ADMIN_EMAIL || 'admin@swagger2mcp.local';
+      const adminPassword = process.env.ADMIN_PASSWORD || 'changeme123';
+      const adminUsername = process.env.ADMIN_USERNAME || 'admin';
+
+      // Check if email is already in use by a non-admin
+      const existingUser = await prisma.user.findUnique({
+        where: { email: adminEmail },
+      });
+
+      if (existingUser) {
+        // Upgrade existing user to admin
+        await prisma.user.update({
+          where: { id: existingUser.id },
+          data: { role: 'admin' },
+        });
+        console.log(`Upgraded existing user ${adminEmail} to admin role`);
+        return;
+      }
+
+      // Create new admin user
+      const passwordHash = await bcrypt.hash(adminPassword, 12);
+      await prisma.user.create({
+        data: {
+          email: adminEmail,
+          username: adminUsername,
+          passwordHash,
+          displayName: 'Administrator',
+          role: 'admin',
+          provider: 'local',
+          isActive: true,
+        },
+      });
+
+      console.log(`Default admin user created: ${adminEmail}`);
+      if (adminPassword === 'changeme123') {
+        console.warn('⚠️  WARNING: Using default admin password. Change it immediately via the admin panel!');
+      }
+    } catch (error: any) {
+      // Log but don't throw - allow server to start even if seeding fails
+      console.error('Admin seed error:', error.message);
+    }
+  }
 }
 
 export const userService = new UserService();
