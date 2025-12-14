@@ -1,3 +1,16 @@
+# [1.3.0](https://github.com/tomer1983/swagger2mcp/compare/v1.2.0...v1.3.0) (2025-12-14)
+
+
+### Bug Fixes
+
+* **deploy:** fix production deployment config for admin feature ([fee9443](https://github.com/tomer1983/swagger2mcp/commit/fee94434e10828b6f3b779259d5300a36b2fa2cf))
+* include user role in auth response to enable immediate admin UI access ([9e73360](https://github.com/tomer1983/swagger2mcp/commit/9e73360b70dc2229e778b4046265853f91fd155d))
+
+
+### Features
+
+* add default admin user seeding with auto-migration on startup ([c0cb8c0](https://github.com/tomer1983/swagger2mcp/commit/c0cb8c002c02420d97e39be5360d597f435f1d25))
+
 # [1.3.0-develop.1](https://github.com/tomer1983/swagger2mcp/compare/v1.2.0...v1.3.0-develop.1) (2025-12-14)
 
 
