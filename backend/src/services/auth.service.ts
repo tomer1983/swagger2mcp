@@ -165,6 +165,7 @@ export class AuthService {
                 username: true,
                 displayName: true,
                 provider: true,
+                role: true,
                 createdAt: true,
                 lastLoginAt: true,
             },
