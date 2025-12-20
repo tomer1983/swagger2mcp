@@ -6,7 +6,10 @@ http://localhost:3000/api
 ```
 
 ## Authentication
-Currently uses anonymous sessions. Session ID is stored in HTTP-only cookie `swagger2mcp_session`.
+Supports both authenticated (JWT) and anonymous sessions. See [Authentication Guide](./AUTHENTICATION.md) for full details.
+
+For authenticated requests, include the `Authorization` header:
+`Authorization: Bearer <token>`
 
 ## Common Headers
 ```

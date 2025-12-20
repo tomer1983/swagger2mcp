@@ -9,6 +9,16 @@ Swagger2MCP supports both authenticated and anonymous access:
 - **JWT Tokens**: All authenticated requests use JWT bearer tokens
 - **Anonymous Access**: Can be enabled/disabled via `ALLOW_ANONYMOUS` environment variable
 
+## Default Admin Credentials
+
+When the application starts for the first time, a default administrator account is created:
+
+- **Email**: `admin@swagger2mcp.local`
+- **Password**: `changeme123`
+
+> [!WARNING]
+> Please change this password immediately after logging in for the first time via the Settings page.
+
 ## Authentication Flow
 
 ### 1. Local Authentication (Username/Password)
