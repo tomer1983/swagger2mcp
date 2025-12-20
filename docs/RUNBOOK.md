@@ -185,6 +185,7 @@ docker exec swagger2mcp-redis-1 redis-cli LLEN bull:default:failed
 - Slow performance
 
 **Diagnosis:**
+
 ```bash
 # Check container memory usage
 docker stats
@@ -197,7 +198,9 @@ docker compose logs backend | grep -i "memory\|heap"
 ```
 
 **Resolution:**
+
 1. Restart affected service:
+
    ```bash
    docker compose restart backend
    ```
@@ -219,6 +222,7 @@ docker compose logs backend | grep -i "memory\|heap"
 - Users reporting slow performance
 
 **Diagnosis:**
+
 ```bash
 # Check response times
 curl -w "@curl-format.txt" -o /dev/null -s https://yourdomain.com/api/health
@@ -239,25 +243,30 @@ docker stats
 ```
 
 **Resolution:**
+
 1. Identify bottleneck (database, Redis, application)
 2. Scale horizontally if needed:
+
    ```bash
    # Kubernetes
    kubectl scale deployment backend --replicas=3 -n swagger2mcp
    
    # Docker Compose (requires swarm mode or manual scaling)
    ```
+
 3. Optimize slow queries (add indexes, review N+1 queries)
 4. Enable caching if not already enabled
 
 ### 6. File Upload Failures
 
 **Symptoms:**
+
 - "File too large" errors
 - Upload timeouts
 - "Cannot save file" errors
 
 **Diagnosis:**
+
 ```bash
 # Check disk space
 df -h
@@ -270,12 +279,14 @@ ls -la backend/uploads/
 ```
 
 **Resolution:**
+
 1. Increase upload size limits:
    - Backend: Multer configuration
    - Nginx: `client_max_body_size 50M;`
    - Kubernetes Ingress: annotation for max body size
 
 2. Clean up old uploads if disk is full:
+
    ```bash
    # Find files older than 30 days
    find backend/uploads/ -type f -mtime +30
@@ -288,6 +299,7 @@ ls -la backend/uploads/
 ### Total Service Outage
 
 1. **Assess the situation:**
+
    ```bash
    # Check all services
    docker compose ps
@@ -295,12 +307,14 @@ ls -la backend/uploads/
    ```
 
 2. **Check recent changes:**
+
    ```bash
    git log -n 5 --oneline
    kubectl rollout history deployment/backend -n swagger2mcp
    ```
 
 3. **Rollback if recent deployment:**
+
    ```bash
    # Kubernetes
    kubectl rollout undo deployment/backend -n swagger2mcp
@@ -318,6 +332,7 @@ ls -la backend/uploads/
 ### Data Loss / Corruption
 
 1. **Stop all writes immediately:**
+
    ```bash
    # Scale down backend and worker
    kubectl scale deployment backend --replicas=0 -n swagger2mcp
@@ -337,6 +352,7 @@ ls -la backend/uploads/
    - Test critical workflows
 
 5. **Resume service:**
+
    ```bash
    kubectl scale deployment backend --replicas=2 -n swagger2mcp
    kubectl scale deployment worker --replicas=1 -n swagger2mcp
@@ -345,6 +361,7 @@ ls -la backend/uploads/
 ### Security Incident
 
 1. **Isolate affected systems:**
+
    ```bash
    # Block external traffic
    # Update firewall rules or security groups
@@ -353,6 +370,7 @@ ls -la backend/uploads/
 2. **Collect evidence:**
    - Export logs immediately
    - Take snapshots of affected systems
+
    ```bash
    docker compose logs > incident-logs-$(date +%Y%m%d-%H%M%S).txt
    ```
@@ -373,18 +391,21 @@ ls -la backend/uploads/
 ### Scheduled Downtime
 
 **Pre-maintenance:**
+
 1. Notify users (via banner, email, etc.)
 2. Enable maintenance mode if available
 3. Backup database
 4. Document rollback plan
 
 **During maintenance:**
+
 1. Put application in maintenance mode
 2. Perform updates
 3. Run migrations if needed
 4. Test functionality
 
 **Post-maintenance:**
+
 1. Run smoke tests
 2. Check error rates
 3. Monitor for issues
@@ -445,6 +466,7 @@ kubectl rollout restart deployment/nginx -n swagger2mcp
 ### High CPU Usage
 
 1. Identify process:
+
    ```bash
    docker stats
    kubectl top pods -n swagger2mcp
@@ -456,6 +478,7 @@ kubectl rollout restart deployment/nginx -n swagger2mcp
    - Infinite loops (bug)
 
 3. Scale if legitimate load:
+
    ```bash
    kubectl scale deployment backend --replicas=3 -n swagger2mcp
    ```
@@ -463,6 +486,7 @@ kubectl rollout restart deployment/nginx -n swagger2mcp
 ### High Database Load
 
 1. Identify slow queries:
+
    ```bash
    docker exec swagger2mcp-postgres-1 psql -U postgres -c \
      "SELECT * FROM pg_stat_statements ORDER BY mean_time DESC LIMIT 10;"
@@ -475,6 +499,7 @@ kubectl rollout restart deployment/nginx -n swagger2mcp
 ### Network Issues
 
 1. Check network connectivity:
+
    ```bash
    # From backend to database
    kubectl exec -it deployment/backend -n swagger2mcp -- \

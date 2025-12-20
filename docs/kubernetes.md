@@ -98,6 +98,8 @@ Key values to override in production:
 |-----------|-------------|---------|
 | `secrets.jwtSecret` | JWT signing secret | `dev-secret-key...` |
 | `secrets.postgresPassword` | PostgreSQL password | `postgres` |
+| `secrets.adminEmail` | Default admin email | `admin@swagger2mcp.local` |
+| `secrets.adminPassword` | Default admin password | `changeme123` |
 | `backend.replicaCount` | Backend replicas | `1` |
 | `ingress.enabled` | Enable ingress | `true` |
 | `ingress.host` | Ingress hostname | `swagger2mcp.local` |

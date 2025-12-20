@@ -42,6 +42,9 @@ REDIS_PORT=6379
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/swagger2mcp
 ALLOWED_ORIGINS=http://localhost:5173
 NODE_ENV=development
+# Default Admin User
+ADMIN_EMAIL=admin@swagger2mcp.local
+ADMIN_PASSWORD=changeme123
 ```
 
 **Frontend** (`frontend/.env`):
@@ -296,7 +299,26 @@ docker-compose restart postgres
 docker-compose logs postgres
 
 # Verify connection string
+# Verify connection string
 echo $DATABASE_URL
+```
+
+### Issue: PostgreSQL "initdb" Error (Data Corruption)
+
+**Symptoms**: `initdb: hint: If you want to remove or empty the directory "/var/lib/postgresql/data"` in logs.
+
+**Solutions**:
+This often happens if the `postgres_data` volume is corrupted or internally conflicting.
+
+```bash
+# 1. Stop containers
+docker-compose down
+
+# 2. Remove the specific volume
+docker volume rm swagger2mcp_postgres_data
+
+# 3. Restart
+docker-compose up -d
 ```
 
 ### Issue: Redis Connection Error
