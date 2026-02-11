@@ -36,7 +36,7 @@
     "@types/passport-local": "^1.0.38",
     "@types/passport-microsoft": "^2.1.1",
     "@xyflow/react": "^12.10.0",
-    "axios": "^1.13.2",
+    "axios": "^1.13.5",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
